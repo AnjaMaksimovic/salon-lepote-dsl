@@ -1,0 +1,58 @@
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>{{ cls.name }} - nov unos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1>Novi {{ cls.name }}</h1>
+<div class="nav"><a href="list_{{ cls.lower }}.html">&larr; Nazad na listu</a></div>
+<form id="f">
+{% for attr in cls.attributes %}
+  <label>{{ attr.name }} ({{ attr.py_type }})
+    <input name="{{ attr.name }}" type="text">
+  </label>
+{% endfor %}
+{% for fk in cls.fk_fields %}
+  <label>{{ fk.column_name }} (id povezanog objekta)
+    <input name="{{ fk.column_name }}" type="number">
+  </label>
+{% endfor %}
+{% for role in cls.m2m_create_fields %}
+  <label>{{ role }}_ids (lista id-jeva, odvojenih zarezom)
+    <input name="{{ role }}_ids" type="text" placeholder="npr. 1,2">
+  </label>
+{% endfor %}
+  <button type="submit">Sačuvaj</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {};
+  fd.forEach((value, key) => {
+    if (key.endsWith("_ids")) {
+      payload[key] = value ? value.split(",").map(s => parseInt(s.trim())) : [];
+    } else if (key.endsWith("_id")) {
+      payload[key] = parseInt(value);
+    } else {
+      payload[key] = value;
+    }
+  });
+  fetch("http://127.0.0.1:8000/{{ cls.lower }}/", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => document.getElementById("out").textContent = JSON.stringify(data, null, 2))
+  .catch(err => document.getElementById("out").textContent = "Greška: " + err);
+});
+</script>
+</body>
+</html>
