@@ -7,6 +7,7 @@ Pokretanje:  python3 generator/generate.py
 """
 import sys
 import os
+import re
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -25,7 +26,7 @@ os.makedirs(FRONTEND_DIR, exist_ok=True)
 env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), trim_blocks=True, lstrip_blocks=True)
 
 # ---------------------------------------------------------------------------
-# Mapiranje B-UML tipova
+# 1. Mapiranje B-UML tipova
 # ---------------------------------------------------------------------------
 SQL_TYPE_MAP = {
     "str": "String(100)",
@@ -54,33 +55,48 @@ SAMPLE_VALUE_MAP = {
     "datetime": "2026-09-10T10:00:00",
     "time": "10:00:00",
 }
+# Tip atributa -> HTML input type (za generisane forme)
+HTML_INPUT_TYPE_MAP = {
+    "str": "text",
+    "int": "number",
+    "float": "number",
+    "bool": "checkbox",
+    "date": "date",
+    "datetime": "datetime-local",
+    "time": "time",
+}
 
-all_classes = [t for t in domain_model.types if isinstance(t, Class)]
-all_enums = [t for t in domain_model.types if isinstance(t, Enumeration)]
+def humanize(name: str) -> str:
+    """'radnoVremeOd' -> 'Radno vreme od', 'trajanjeMin' -> 'Trajanje min'."""
+    spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', name).replace("_", " ")
+    return spaced[:1].upper() + spaced[1:].lower()
+
+all_classes = sorted((t for t in domain_model.types if isinstance(t, Class)), key=lambda c: c.name)
+all_enums = sorted((t for t in domain_model.types if isinstance(t, Enumeration)), key=lambda e: e.name)
 enum_names_by_type = {e.name: e for e in all_enums}
 enum_names = [e.name for e in all_enums]
 
 def resolve_type(buml_type, attr_name):
-    """Vraća (sql_type, py_type, sample_value) za dati B-UML tip atributa."""
+    """Vraća (sql_type, py_type, sample_value, enum_literals|None) za dati B-UML tip atributa."""
     type_name = getattr(buml_type, "name", None)
     if type_name in enum_names_by_type:
-        prvi_literal = next(iter(enum_names_by_type[type_name].literals)).name
-        return f"SAEnum({type_name})", type_name, prvi_literal
+        literals = sorted(lit.name for lit in enum_names_by_type[type_name].literals)
+        return f"SAEnum({type_name})", type_name, literals[0], literals
     sql = SQL_TYPE_MAP.get(type_name, "String(100)")
     py = PY_TYPE_MAP.get(type_name, "str")
     sample = SAMPLE_VALUE_MAP.get(type_name, "primer")
-    return sql, py, sample
+    return sql, py, sample, None
 
-MANY = 9999  # BESSER export koristi 9999 kao "unbounded"
+MANY = 9999  # BESSER export koristi 9999 kao "unbounded" (*)
 
 class_by_name = {c.name: c for c in all_classes}
 fk_fields_by_class = {c.name: [] for c in all_classes}          # 1:N -> FK kolone
 relationships_by_class = {c.name: [] for c in all_classes}       # SQLAlchemy relationship() pozivi
-m2m_associations = []                                             # za association table
+m2m_associations = []                                             # za association_table
 m2m_create_fields_by_class = {c.name: [] for c in all_classes}   # role imena za *_ids polja u Create schemi
 m2m_role_to_class = {}                                            # role -> ciljna klasa (za validaciju/repo)
 
-for assoc in domain_model.associations:
+for assoc in sorted(domain_model.associations, key=lambda a: a.name):
     ends = sorted(assoc.ends, key=lambda e: e.name)  # determinizam - uvek isti redosled
     e1, e2 = ends[0], ends[1]
     is_many_to_many = e1.multiplicity.max >= MANY and e2.multiplicity.max >= MANY
@@ -126,11 +142,25 @@ for assoc in domain_model.associations:
 
 def build_class_context(cls):
     attrs = []
-    for a in cls.attributes:
-        sql_type, py_type, sample = resolve_type(a.type, a.name)
-        attrs.append({"name": a.name, "sql_type": sql_type, "py_type": py_type, "sample": sample})
+    for a in sorted(cls.attributes, key=lambda x: x.name):  # determinizam - cls.attributes je set
+        sql_type, py_type, sample, options = resolve_type(a.type, a.name)
+        is_enum = options is not None
+        attrs.append({
+            "name": a.name,
+            "sql_type": sql_type,
+            "py_type": py_type,
+            "sample": sample,
+            "label": humanize(a.name),
+            "is_enum": is_enum,
+            "options": options,
+            "html_type": "select" if is_enum else HTML_INPUT_TYPE_MAP.get(py_type, "text"),
+        })
     temporal_attrs = [a for a in attrs if a["py_type"] in ("date", "datetime", "time")]
-    display_attr = next((a["name"] for a in attrs if a["py_type"] == "str"), "id")
+    str_attr_names = sorted(a["name"] for a in attrs if a["py_type"] == "str")
+    display_attr = next(
+        (n for n in ("naziv", "ime", "name", "title") if n in str_attr_names),
+        str_attr_names[0] if str_attr_names else "id",
+    )
     return {
         "name": cls.name,
         "lower": cls.name.lower(),
@@ -147,11 +177,24 @@ classes_ctx = [build_class_context(c) for c in all_classes]
 class_names = [c.name for c in all_classes]
 class_ctx_by_name = {c["name"]: c for c in classes_ctx}
 
+# Klase koje se pojavljuju kao META N:N veze (moraju dobiti "Ref" schema za prikaz)
 m2m_target_class_names = sorted(set(m2m_role_to_class.values()))
+# role -> koji atribut ciljne klase prikazati (npr. 'usluga' -> 'naziv')
 m2m_role_display_attr = {
     role: class_ctx_by_name[target]["display_attr"]
     for role, target in m2m_role_to_class.items()
 }
+# role -> lowercase ime ciljne klase (za fetch URL u frontendu, npr. 'usluga' -> 'usluga')
+m2m_role_target_lower = {role: target.lower() for role, target in m2m_role_to_class.items()}
+
+# FK kolone dobijaju "label" (za forme/listu) i "display_attr" ciljne klase
+# (da frontend može da prikaže npr. ime klijenta umesto sirovog klijent_id broja)
+lower_to_class_name = {c.name.lower(): c.name for c in all_classes}
+for cls_ctx in classes_ctx:
+    for fk in cls_ctx["fk_fields"]:
+        target_ctx = class_ctx_by_name[lower_to_class_name[fk["ref_table"]]]
+        fk["display_attr"] = target_ctx["display_attr"]
+        fk["label"] = humanize(re.sub(r"_id$", "", fk["column_name"]))
 
 enums_ctx = [
     {"name": e.name, "literals": [lit.name for lit in e.literals]}
@@ -175,7 +218,6 @@ render("entity.py.j2", os.path.join(OUTPUT_DIR, "entities.py"),
 render("association_table.py.j2", os.path.join(OUTPUT_DIR, "association_tables.py"),
        associations=m2m_associations)
 
-# generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
 
-print("\nGenerisanje zavrseno.")
+print("\nGenerisanje završeno.")

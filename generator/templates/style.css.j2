@@ -124,6 +124,19 @@ button.del {
 }
 button.del:hover { background: var(--danger); color: white; }
 
+a.edit {
+  display: inline-block;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+a.edit:hover { background: var(--accent); color: white; }
+
 form {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -139,7 +152,7 @@ label {
   font-weight: 600;
 }
 
-input {
+input, select {
   display: block;
   width: 100%;
   margin-top: 0.35rem;
@@ -151,11 +164,43 @@ input {
   color: var(--text);
   background: var(--bg);
 }
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: var(--accent);
   background: var(--surface);
 }
+
+label.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+label.checkbox-inline input { display: inline-block; width: auto; margin-top: 0; }
+
+fieldset.checkbox-group {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg);
+}
+fieldset.checkbox-group legend {
+  padding: 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.checkbox-group-items { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; }
+.checkbox-group-items label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0;
+  font-weight: 400;
+  color: var(--text);
+}
+.checkbox-group-items input { display: inline-block; width: auto; margin-top: 0; }
+.checkbox-group-items .muted { color: var(--muted); }
 
 button[type="submit"] {
   background: var(--accent);
@@ -169,6 +214,7 @@ button[type="submit"] {
   margin-top: 0.5rem;
 }
 button[type="submit"]:hover { background: var(--accent-dark); }
+button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
 
 pre#out {
   background: var(--surface);
@@ -179,4 +225,10 @@ pre#out {
   font-size: 0.85rem;
   color: var(--muted);
   white-space: pre-wrap;
+}
+pre#out:empty { display: none; }
+pre#out.error {
+  color: var(--danger-dark);
+  border-color: var(--danger);
+  background: #fdf0f2;
 }
