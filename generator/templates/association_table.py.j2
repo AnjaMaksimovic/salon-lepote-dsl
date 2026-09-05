@@ -1,0 +1,13 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+from sqlalchemy import Table, Column, Integer, ForeignKey
+from generated.entities import Base
+
+{% for m in associations %}
+{{ m.table_name }} = Table(
+    "{{ m.table_name }}",
+    Base.metadata,
+    Column("{{ m.table_a }}_id", Integer, ForeignKey("{{ m.table_a }}.id"), primary_key=True),
+    Column("{{ m.table_b }}_id", Integer, ForeignKey("{{ m.table_b }}.id"), primary_key=True),
+)
+
+{% endfor %}
