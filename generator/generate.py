@@ -172,6 +172,9 @@ render("enum.py.j2", os.path.join(OUTPUT_DIR, "enums.py"), enums=enums_ctx)
 render("entity.py.j2", os.path.join(OUTPUT_DIR, "entities.py"),
        classes=classes_ctx, enum_names=enum_names)
 
+render("association_table.py.j2", os.path.join(OUTPUT_DIR, "association_tables.py"),
+       associations=m2m_associations)
+
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
 
