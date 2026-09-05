@@ -5,12 +5,12 @@ import enum
 class KategorijaUsluge(enum.Enum):
     DEPILACIJA = "DEPILACIJA"
     NEGA_LICA = "NEGA_LICA"
-    FRIZURA = "FRIZURA"
-    LASH_BROW = "LASH_BROW"
     MANIKIR_PEDIKIR = "MANIKIR_PEDIKIR"
+    LASH_BROW = "LASH_BROW"
+    FRIZURA = "FRIZURA"
 
 class StatusTermina(enum.Enum):
-    ZAKAZAN = "ZAKAZAN"
     OTKAZAN = "OTKAZAN"
     ODRZAN = "ODRZAN"
+    ZAKAZAN = "ZAKAZAN"
 

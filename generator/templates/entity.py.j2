@@ -1,0 +1,24 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime, Time, ForeignKey, Enum as SAEnum
+from sqlalchemy.orm import DeclarativeBase, relationship
+from generated.enums import {{ enum_names | join(", ") }}
+
+
+class Base(DeclarativeBase):
+    pass
+
+{% for cls in classes %}
+
+class {{ cls.name }}(Base):
+    __tablename__ = "{{ cls.table_name }}"
+    id = Column(Integer, primary_key=True)
+{% for attr in cls.attributes %}
+    {{ attr.name }} = Column({{ attr.sql_type }})
+{% endfor %}
+{% for fk in cls.fk_fields %}
+    {{ fk.column_name }} = Column(Integer, ForeignKey("{{ fk.ref_table }}.id"), nullable=False)
+{% endfor %}
+{% for rel in cls.relationships %}
+    {{ rel.attr_name }} = relationship("{{ rel.target_class }}", back_populates="{{ rel.back_populates }}")
+{% endfor %}
+{% endfor %}
