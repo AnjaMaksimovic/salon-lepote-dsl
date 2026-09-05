@@ -167,6 +167,8 @@ def render(template_name, output_path, **ctx):
 
 print("Generisanje pokrenuto...\n")
 
+render("enum.py.j2", os.path.join(OUTPUT_DIR, "enums.py"), enums=enums_ctx)
+
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
 
