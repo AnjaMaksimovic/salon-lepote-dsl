@@ -1,0 +1,11 @@
+"""AUTO-GENERISANO - NE MENJATI RUcNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+import enum
+
+
+{% for e in enums %}
+class {{ e.name }}(enum.Enum):
+{% for lit in e.literals %}
+    {{ lit }} = "{{ lit }}"
+{% endfor %}
+
+{% endfor %}
