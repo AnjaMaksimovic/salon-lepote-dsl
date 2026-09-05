@@ -1,0 +1,27 @@
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Salon lepote - administracija</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1>Administracija</h1>
+<p class="subtitle">Grub frontend, generisan iz B-UML modela.</p>
+
+{% for cls in classes %}
+<div class="card">
+  <span class="name">{{ cls.name }}</span>
+  <span class="actions">
+    <a href="list_{{ cls.lower }}.html">Lista</a>
+    <a href="form_{{ cls.lower }}.html">+ Dodaj</a>
+  </span>
+</div>
+{% endfor %}
+
+<p class="hint">Backend API dokumentacija: <a href="http://127.0.0.1:8000/docs">/docs</a></p>
+</div>
+</body>
+</html>
