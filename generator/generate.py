@@ -372,6 +372,10 @@ render("converter.py.j2", os.path.join(OUTPUT_DIR, "converter.py"),
 render("repository.py.j2", os.path.join(OUTPUT_DIR, "repository.py"),
        classes=classes_ctx, class_names=class_names, associations=m2m_associations)
 
+render("validation.py.j2", os.path.join(OUTPUT_DIR, "validation.py"),
+       constraints=constraints_ctx, classes_with_constraints=classes_with_constraints_ctx,
+       class_names=class_names)
+
 render("routes.py.j2", os.path.join(OUTPUT_DIR, "routes.py"),
     classes=classes_ctx, has_validation=len(constraints_ctx) > 0,
     validated_classes=validated_classes,

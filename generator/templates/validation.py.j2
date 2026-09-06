@@ -1,0 +1,26 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO.
+Izmene radite u model/salon_model.py i ponovo pokrenite generate.py.
+OCL ograničenja se proveravaju nad podacima zahteva pre upisa u bazu.
+Povezani objekti učitavaju se iz baze na osnovu ID vrednosti iz zahteva.
+"""
+from sqlalchemy.orm import Session
+from generated.entities import {{ class_names | join(", ") }}
+
+{% for c in constraints %}
+def validiraj_{{ c.name }}(db: Session, data) -> None:
+    """{{ c.description }}
+
+    Izvorno OCL ograničenje:
+    {{ c.expression }}
+    """
+{{ c.python_body }}
+
+{% endfor %}
+{% for cls in classes_with_constraints %}
+def validiraj_{{ cls.name }}(db: Session, data) -> None:
+    """Proverava sva OCL ograničenja definisana za {{ cls.name }}."""
+{% for cname in cls.constraint_names %}
+    validiraj_{{ cname }}(db, data)
+{% endfor %}
+
+{% endfor %}
