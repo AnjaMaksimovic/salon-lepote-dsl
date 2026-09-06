@@ -9,6 +9,7 @@ import sys
 import os
 import re
 import shutil
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -218,6 +219,64 @@ for m in m2m_associations:
 for cls_ctx in classes_ctx:
     cls_ctx["m2m_links"] = m2m_links_by_class[cls_ctx["name"]]
 
+# Sample Create payload po klasi (za Postman kolekciju) - koristi vec izracunate
+# attr["sample"] vrednosti, fk sample id=1, m2m sample id liste=[1]
+for cls_ctx in classes_ctx:
+    payload = {a["name"]: a["sample"] for a in cls_ctx["attributes"]}
+    for fk in cls_ctx["fk_fields"]:
+        payload[fk["column_name"]] = 1
+    for role in cls_ctx["m2m_create_fields"]:
+        payload[f"{role}_ids"] = [1]
+    cls_ctx["sample_payload"] = payload
+
+# Postman kolekcija - jedna folder po klasi sa List/Get/Create/Update/Delete
+# zahtevima, prati REST konvenciju /{klasa.lower}[/{id}] koju ce routes.py.j2
+# koristiti. Kolekcija se gradi kao obican Python dict pa serijalizuje u JSON
+# ovde (umesto rucnog sastavljanja JSON-a u Jinja-i), da bi izlaz uvek bio
+# validan JSON.
+POSTMAN_BASE_URL = "http://localhost:8000"
+
+def build_postman_folder(cls_ctx):
+    base = "{{base_url}}/" + cls_ctx["lower"]
+    payload_raw = json.dumps(cls_ctx["sample_payload"], indent=2, ensure_ascii=False)
+
+    def request_item(name, method, path_suffix="", with_body=False):
+        url_raw = base + path_suffix
+        path_parts = [cls_ctx["lower"]] + ([ "1" ] if path_suffix else [])
+        request = {
+            "method": method,
+            "header": [{"key": "Content-Type", "value": "application/json"}] if with_body else [],
+            "url": {"raw": url_raw, "host": ["{{base_url}}"], "path": path_parts},
+        }
+        if with_body:
+            request["body"] = {
+                "mode": "raw",
+                "raw": payload_raw,
+                "options": {"raw": {"language": "json"}},
+            }
+        return {"name": name, "request": request}
+
+    return {
+        "name": cls_ctx["name"],
+        "item": [
+            request_item(f"List {cls_ctx['name']}", "GET"),
+            request_item(f"Get {cls_ctx['name']} by id", "GET", "/1"),
+            request_item(f"Create {cls_ctx['name']}", "POST", with_body=True),
+            request_item(f"Update {cls_ctx['name']}", "PUT", "/1", with_body=True),
+            request_item(f"Delete {cls_ctx['name']}", "DELETE", "/1"),
+        ],
+    }
+
+postman_collection = {
+    "info": {
+        "name": "Salon Lepote API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    },
+    "item": [build_postman_folder(c) for c in classes_ctx],
+    "variable": [{"key": "base_url", "value": POSTMAN_BASE_URL}],
+}
+postman_collection_json = json.dumps(postman_collection, indent=2, ensure_ascii=False)
+
 enums_ctx = [
     {"name": e.name, "literals": [lit.name for lit in e.literals]}
     for e in all_enums
@@ -259,6 +318,9 @@ shutil.copyfile(
     os.path.join(OUTPUT_DIR, "business_rules.py"),
 )
 print(f"  generisano: {os.path.relpath(os.path.join(OUTPUT_DIR, 'business_rules.py'), BASE_DIR)}")
+
+render("postman_collection.j2", os.path.join(OUTPUT_DIR, "postman_collection.json"),
+       collection_json=postman_collection_json)
 
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
