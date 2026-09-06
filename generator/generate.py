@@ -221,6 +221,12 @@ render("association_table.py.j2", os.path.join(OUTPUT_DIR, "association_tables.p
 render("schema.py.j2", os.path.join(OUTPUT_DIR, "schema.py"),
        classes=classes_ctx, enum_names=enum_names)
 
+render("dto.py.j2", os.path.join(OUTPUT_DIR, "dto.py"),
+       classes=classes_ctx, enum_names=enum_names)
+
+render("converter.py.j2", os.path.join(OUTPUT_DIR, "converter.py"),
+       classes=classes_ctx, class_names=class_names)
+
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
 

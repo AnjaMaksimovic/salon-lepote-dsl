@@ -1,0 +1,17 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+from dataclasses import dataclass
+from datetime import date, datetime, time
+from generated.enums import {{ enum_names | join(", ") }}
+
+{% for cls in classes %}
+
+@dataclass
+class {{ cls.name }}DTO:
+    id: int
+{% for attr in cls.attributes %}
+    {{ attr.name }}: {{ attr.py_type }}
+{% endfor %}
+{% for fk in cls.fk_fields %}
+    {{ fk.column_name }}: int
+{% endfor %}
+{% endfor %}
