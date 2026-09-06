@@ -282,10 +282,71 @@ enums_ctx = [
     for e in all_enums
 ]
 
+# OCL prevodilac i kontekst za validaciju (deo 2b iz vodica).
+SUM_PATTERN = re.compile(
+    r"self\.(\w+)\s*(>=|<=|==|>|<)\s*self\.(\w+)->collect\(u \| u\.(\w+)\)->sum\(\)"
+)
+FORALL_PATTERN = re.compile(
+    r"self\.(\w+)->forAll\(u \| self\.(\w+)\.(\w+)->includes\(u\)\)"
+)
+SIMPLE_COMPARISON_PATTERN = re.compile(
+    r"self\.(\w+)\s*(>=|<=|==|>|<)\s*(-?\d+(?:\.\d+)?)\s*$"
+)
+
+
+def translate_ocl(expr: str, description: str) -> str:
+    body = expr.split(":", 1)[1].strip()
+    m = SUM_PATTERN.match(body)
+    if m:
+        attr, op, coll, inner = m.groups()
+        target_class = m2m_role_to_class[coll]
+        return (
+            f'    povezani = db.query({target_class}).filter({target_class}.id.in_(data.{coll}_ids)).all()\n'
+            f'    zbir = sum(getattr(o, "{inner}") for o in povezani)\n'
+            f'    if not (data.{attr} {op} zbir):\n'
+            f'        raise ValueError({description!r})\n'
+        )
+    m = FORALL_PATTERN.match(body)
+    if m:
+        coll, other, inner_coll = m.groups()
+        return (
+            f'    drugi_objekat = db.query({other.capitalize()}).filter({other.capitalize()}.id == data.{other}_id).first()\n'
+            f'    dozvoljeni_ids = {{u.id for u in getattr(drugi_objekat, "{inner_coll}")}} if drugi_objekat else set()\n'
+            f'    if not all(uid in dozvoljeni_ids for uid in data.{coll}_ids):\n'
+            f'        raise ValueError({description!r})\n'
+        )
+    m = SIMPLE_COMPARISON_PATTERN.match(body)
+    if m:
+        attr, op, literal = m.groups()
+        return (
+            f'    if not (data.{attr} {op} {literal}):\n'
+            f'        raise ValueError({description!r})\n'
+        )
+    return f'    # TODO: nije prepoznat obrazac OCL izraza, potrebna rucna dopuna\n    # {body}\n    pass\n'
+
+
+constraints_ctx = []
+classes_with_constraints = {}
+for c in sorted(domain_model.constraints, key=lambda x: x.name):
+    py_body = translate_ocl(c.expression, c.description)
+    constraints_ctx.append({
+        "name": c.name,
+        "description": c.description,
+        "expression": c.expression,
+        "python_body": py_body,
+    })
+    classes_with_constraints.setdefault(c.context.name, []).append(c.name)
+
+classes_with_constraints_ctx = [
+    {"name": k, "constraint_names": v} for k, v in classes_with_constraints.items()
+]
+validated_classes = set(classes_with_constraints.keys())
+
+
 def render(template_name, output_path, **ctx):
     tpl = env.get_template(template_name)
     content = tpl.render(**ctx)
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"  generisano: {os.path.relpath(output_path, BASE_DIR)}")
 
@@ -310,6 +371,13 @@ render("converter.py.j2", os.path.join(OUTPUT_DIR, "converter.py"),
 
 render("repository.py.j2", os.path.join(OUTPUT_DIR, "repository.py"),
        classes=classes_ctx, class_names=class_names, associations=m2m_associations)
+
+render("routes.py.j2", os.path.join(OUTPUT_DIR, "routes.py"),
+    classes=classes_ctx, has_validation=len(constraints_ctx) > 0,
+    validated_classes=validated_classes,
+    schema_names=[f"{c['name']}Create" for c in classes_ctx] + [f"{c['name']}Read" for c in classes_ctx] + [f"{c['name']}Update" for c in
+    classes_ctx])
+
 
 # business_rules.py se ne generise iz modela (rucno napisane OCL invarijante) -
 # samo se kopira u generated/, bez Jinja2 obrade
