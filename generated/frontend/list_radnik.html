@@ -1,0 +1,72 @@
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Radnik - lista</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1>Radnik</h1>
+<div class="nav">
+  <a href="index.html">&larr; Početna</a><span class="sep">|</span><a href="form_radnik.html">+ Novi Radnik</a>
+</div>
+<table id="tbl">
+<thead><tr>
+  <th>id</th>
+  <th>Ime</th>
+  <th>Prezime</th>
+  <th>Radno vreme do</th>
+  <th>Radno vreme od</th>
+  <th>Usluga</th>
+  <th></th>
+</tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<script>
+function ucitajFkLookupe() {
+  return Promise.all([
+  ]);
+}
+const fkLookupi = {};
+
+function ucitaj() {
+  ucitajFkLookupe().then(() => {
+    fetch("http://127.0.0.1:8000/radnik/")
+      .then(r => r.json())
+      .then(rows => {
+        const tbody = document.querySelector("#tbl tbody");
+        tbody.innerHTML = "";
+        if (rows.length === 0) {
+          const colCount = document.querySelectorAll("#tbl thead th").length;
+          tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center; color:var(--muted); padding:1.5rem;">
+            Nema unosa. <a href="form_radnik.html">Dodajte prvi.</a></td></tr>`;
+          return;
+        }
+        rows.forEach(row => {
+          const tr = document.createElement("tr");
+          let html = `<td>${row.id}</td>`;
+          html += `<td>${row.ime ?? ""}</td>`;
+          html += `<td>${row.prezime ?? ""}</td>`;
+          html += `<td>${row.radnoVremeDo ?? ""}</td>`;
+          html += `<td>${row.radnoVremeOd ?? ""}</td>`;
+          html += `<td>${(row.usluga || []).map(o => o.naziv).join(", ")}</td>`;
+          html += `<td><a class="edit" href="form_radnik.html?id=${row.id}">izmeni</a><button class="del" data-id="${row.id}">obriši</button></td>`;
+          tr.innerHTML = html;
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll("button.del").forEach(btn => {
+          btn.addEventListener("click", () => {
+            fetch(`http://127.0.0.1:8000/radnik/${btn.dataset.id}`, { method: "DELETE" })
+              .then(() => ucitaj());
+          });
+        });
+      });
+  });
+}
+ucitaj();
+</script>
+</body>
+</html>

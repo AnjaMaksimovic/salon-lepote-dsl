@@ -1,0 +1,300 @@
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Usluga - nov unos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">Novi Usluga</h1>
+<div class="nav"><a href="list_usluga.html">&larr; Nazad na listu</a></div>
+<form id="f">
+  <label>Cena
+    <input name="cena" type="number" step="any">
+  </label>
+  <label>Kategorija
+    <select name="kategorija">
+      <option value="DEPILACIJA">DEPILACIJA</option>
+      <option value="FRIZURA">FRIZURA</option>
+      <option value="LASH_BROW">LASH_BROW</option>
+      <option value="MANIKIR_PEDIKIR">MANIKIR_PEDIKIR</option>
+      <option value="NEGA_LICA">NEGA_LICA</option>
+    </select>
+  </label>
+  <label>Naziv
+    <input name="naziv" type="text">
+  </label>
+  <label>Trajanje min
+    <input name="trajanjeMin" type="number">
+  </label>
+  <fieldset class="checkbox-group" data-m2m-source="paket" data-m2m-display="naziv" data-m2m-role="paket">
+    <legend>Paket (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <fieldset class="checkbox-group" data-m2m-source="radnik" data-m2m-display="ime" data-m2m-role="radnik">
+    <legend>Radnik (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <fieldset class="checkbox-group" data-m2m-source="termin" data-m2m-display="id" data-m2m-role="termin">
+    <legend>Termin (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <button type="submit">Sačuvaj</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Usluga - izmena";
+  document.getElementById("naslov").textContent = "Izmeni Usluga";
+  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+}
+
+function popuniIzbor(url, render) {
+  return fetch(url).then(r => r.json()).then(render);
+}
+
+const opcijeUcitane = [
+  popuniIzbor("http://127.0.0.1:8000/paket/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="paket"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="paket_ids" value="${o.id}"> ${o.naziv ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u paket.</span>';
+  }),
+  popuniIzbor("http://127.0.0.1:8000/radnik/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="radnik"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="radnik_ids" value="${o.id}"> ${o.ime ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u radnik.</span>';
+  }),
+  popuniIzbor("http://127.0.0.1:8000/termin/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="termin"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="termin_ids" value="${o.id}"> ${o.id ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u termin.</span>';
+  }),
+];
+
+if (editId) {
+  Promise.all(opcijeUcitane).then(() => {
+    fetch(`http://127.0.0.1:8000/usluga/${editId}`)
+      .then(r => r.json())
+      .then(rec => {
+        document.querySelector('[name="cena"]').value = rec.cena ?? "";
+        document.querySelector('[name="kategorija"]').value = rec.kategorija ?? "";
+        document.querySelector('[name="naziv"]').value = rec.naziv ?? "";
+        document.querySelector('[name="trajanjeMin"]').value = rec.trajanjeMin ?? "";
+        const izabrano_paket = new Set((rec.paket || []).map(o => o.id));
+        document.querySelectorAll('input[name="paket_ids"]').forEach(cb => {
+          cb.checked = izabrano_paket.has(parseInt(cb.value, 10));
+        });
+        const izabrano_radnik = new Set((rec.radnik || []).map(o => o.id));
+        document.querySelectorAll('input[name="radnik_ids"]').forEach(cb => {
+          cb.checked = izabrano_radnik.has(parseInt(cb.value, 10));
+        });
+        const izabrano_termin = new Set((rec.termin || []).map(o => o.id));
+        document.querySelectorAll('input[name="termin_ids"]').forEach(cb => {
+          cb.checked = izabrano_termin.has(parseInt(cb.value, 10));
+        });
+      });
+  });
+}
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["cena"] = parseFloat(document.querySelector('[name="cena"]').value);
+  payload["kategorija"] = document.querySelector('[name="kategorija"]').value;
+  payload["naziv"] = document.querySelector('[name="naziv"]').value;
+  payload["trajanjeMin"] = parseInt(document.querySelector('[name="trajanjeMin"]').value, 10);
+  payload["paket_ids"] = Array.from(document.querySelectorAll('input[name="paket_ids"]:checked')).map(el => parseInt(el.value, 10));
+  payload["radnik_ids"] = Array.from(document.querySelectorAll('input[name="radnik_ids"]:checked')).map(el => parseInt(el.value, 10));
+  payload["termin_ids"] = Array.from(document.querySelectorAll('input[name="termin_ids"]:checked')).map(el => parseInt(el.value, 10));
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Čuvanje...";
+
+  const url = editId
+    ? `http://127.0.0.1:8000/usluga/${editId}`
+    : "http://127.0.0.1:8000/usluga/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Sačuvano. Preusmeravanje na listu...";
+    setTimeout(() => { window.location.href = "list_usluga.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Usluga - nov unos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">Novi Usluga</h1>
+<div class="nav"><a href="list_usluga.html">&larr; Nazad na listu</a></div>
+<form id="f">
+  <label>Cena
+    <input name="cena" type="number" step="any">
+  </label>
+  <label>Kategorija
+    <select name="kategorija">
+      <option value="DEPILACIJA">DEPILACIJA</option>
+      <option value="FRIZURA">FRIZURA</option>
+      <option value="LASH_BROW">LASH_BROW</option>
+      <option value="MANIKIR_PEDIKIR">MANIKIR_PEDIKIR</option>
+      <option value="NEGA_LICA">NEGA_LICA</option>
+    </select>
+  </label>
+  <label>Naziv
+    <input name="naziv" type="text">
+  </label>
+  <label>Trajanje min
+    <input name="trajanjeMin" type="number">
+  </label>
+  <fieldset class="checkbox-group" data-m2m-source="paket" data-m2m-display="naziv" data-m2m-role="paket">
+    <legend>Paket (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <fieldset class="checkbox-group" data-m2m-source="radnik" data-m2m-display="ime" data-m2m-role="radnik">
+    <legend>Radnik (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <fieldset class="checkbox-group" data-m2m-source="termin" data-m2m-display="id" data-m2m-role="termin">
+    <legend>Termin (izaberi jednu ili više)</legend>
+    <div class="checkbox-group-items">- učitavanje -</div>
+  </fieldset>
+  <button type="submit">Sačuvaj</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Usluga - izmena";
+  document.getElementById("naslov").textContent = "Izmeni Usluga";
+  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+}
+
+function popuniIzbor(url, render) {
+  return fetch(url).then(r => r.json()).then(render);
+}
+
+const opcijeUcitane = [
+  popuniIzbor("http://127.0.0.1:8000/paket/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="paket"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="paket_ids" value="${o.id}"> ${o.naziv ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u paket.</span>';
+  }),
+  popuniIzbor("http://127.0.0.1:8000/radnik/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="radnik"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="radnik_ids" value="${o.id}"> ${o.ime ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u radnik.</span>';
+  }),
+  popuniIzbor("http://127.0.0.1:8000/termin/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="termin"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="termin_ids" value="${o.id}"> ${o.id ?? ("#" + o.id)}</label>`).join("")
+      : '<span class="muted">Nema unosa u termin.</span>';
+  }),
+];
+
+if (editId) {
+  Promise.all(opcijeUcitane).then(() => {
+    fetch(`http://127.0.0.1:8000/usluga/${editId}`)
+      .then(r => r.json())
+      .then(rec => {
+        document.querySelector('[name="cena"]').value = rec.cena ?? "";
+        document.querySelector('[name="kategorija"]').value = rec.kategorija ?? "";
+        document.querySelector('[name="naziv"]').value = rec.naziv ?? "";
+        document.querySelector('[name="trajanjeMin"]').value = rec.trajanjeMin ?? "";
+        const izabrano_paket = new Set((rec.paket || []).map(o => o.id));
+        document.querySelectorAll('input[name="paket_ids"]').forEach(cb => {
+          cb.checked = izabrano_paket.has(parseInt(cb.value, 10));
+        });
+        const izabrano_radnik = new Set((rec.radnik || []).map(o => o.id));
+        document.querySelectorAll('input[name="radnik_ids"]').forEach(cb => {
+          cb.checked = izabrano_radnik.has(parseInt(cb.value, 10));
+        });
+        const izabrano_termin = new Set((rec.termin || []).map(o => o.id));
+        document.querySelectorAll('input[name="termin_ids"]').forEach(cb => {
+          cb.checked = izabrano_termin.has(parseInt(cb.value, 10));
+        });
+      });
+  });
+}
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["cena"] = parseFloat(document.querySelector('[name="cena"]').value);
+  payload["kategorija"] = document.querySelector('[name="kategorija"]').value;
+  payload["naziv"] = document.querySelector('[name="naziv"]').value;
+  payload["trajanjeMin"] = parseInt(document.querySelector('[name="trajanjeMin"]').value, 10);
+  payload["paket_ids"] = Array.from(document.querySelectorAll('input[name="paket_ids"]:checked')).map(el => parseInt(el.value, 10));
+  payload["radnik_ids"] = Array.from(document.querySelectorAll('input[name="radnik_ids"]:checked')).map(el => parseInt(el.value, 10));
+  payload["termin_ids"] = Array.from(document.querySelectorAll('input[name="termin_ids"]:checked')).map(el => parseInt(el.value, 10));
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Čuvanje...";
+
+  const url = editId
+    ? `http://127.0.0.1:8000/usluga/${editId}`
+    : "http://127.0.0.1:8000/usluga/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Sačuvano. Preusmeravanje na listu...";
+    setTimeout(() => { window.location.href = "list_usluga.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>

@@ -383,6 +383,16 @@ render("routes.py.j2", os.path.join(OUTPUT_DIR, "routes.py"),
     classes_ctx])
 
 
+for cls in classes_ctx:
+    render("frontend_list.j2", os.path.join(FRONTEND_DIR, f"list_{cls['lower']}.html"),
+           cls=cls, m2m_role_display_attr=m2m_role_display_attr)
+    render("frontend_form.j2", os.path.join(FRONTEND_DIR, f"form_{cls['lower']}.html"),
+           cls=cls, m2m_role_display_attr=m2m_role_display_attr,
+           m2m_role_target_lower=m2m_role_target_lower)
+
+render("frontend_index.j2", os.path.join(FRONTEND_DIR, "index.html"), classes=classes_ctx)
+render("style.css.j2", os.path.join(FRONTEND_DIR, "style.css"))
+
 # business_rules.py se ne generise iz modela (rucno napisane OCL invarijante) -
 # samo se kopira u generated/, bez Jinja2 obrade
 shutil.copyfile(

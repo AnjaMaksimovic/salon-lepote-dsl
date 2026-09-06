@@ -1,0 +1,178 @@
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Klijent - nov unos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">Novi Klijent</h1>
+<div class="nav"><a href="list_klijent.html">&larr; Nazad na listu</a></div>
+<form id="f">
+  <label>Email
+    <input name="email" type="text">
+  </label>
+  <label>Ime
+    <input name="ime" type="text">
+  </label>
+  <label>Telefon
+    <input name="telefon" type="text">
+  </label>
+  <button type="submit">Sačuvaj</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Klijent - izmena";
+  document.getElementById("naslov").textContent = "Izmeni Klijent";
+  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+}
+
+const opcijeUcitane = [];
+
+if (editId) {
+  Promise.all(opcijeUcitane).then(() => {
+    fetch(`http://127.0.0.1:8000/klijent/${editId}`)
+      .then(r => r.json())
+      .then(rec => {
+        document.querySelector('[name="email"]').value = rec.email ?? "";
+        document.querySelector('[name="ime"]').value = rec.ime ?? "";
+        document.querySelector('[name="telefon"]').value = rec.telefon ?? "";
+      });
+  });
+}
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["email"] = document.querySelector('[name="email"]').value;
+  payload["ime"] = document.querySelector('[name="ime"]').value;
+  payload["telefon"] = document.querySelector('[name="telefon"]').value;
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Čuvanje...";
+
+  const url = editId
+    ? `http://127.0.0.1:8000/klijent/${editId}`
+    : "http://127.0.0.1:8000/klijent/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Sačuvano. Preusmeravanje na listu...";
+    setTimeout(() => { window.location.href = "list_klijent.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
+<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Klijent - nov unos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">Novi Klijent</h1>
+<div class="nav"><a href="list_klijent.html">&larr; Nazad na listu</a></div>
+<form id="f">
+  <label>Email
+    <input name="email" type="text">
+  </label>
+  <label>Ime
+    <input name="ime" type="text">
+  </label>
+  <label>Telefon
+    <input name="telefon" type="text">
+  </label>
+  <button type="submit">Sačuvaj</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Klijent - izmena";
+  document.getElementById("naslov").textContent = "Izmeni Klijent";
+  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+}
+
+const opcijeUcitane = [];
+
+if (editId) {
+  Promise.all(opcijeUcitane).then(() => {
+    fetch(`http://127.0.0.1:8000/klijent/${editId}`)
+      .then(r => r.json())
+      .then(rec => {
+        document.querySelector('[name="email"]').value = rec.email ?? "";
+        document.querySelector('[name="ime"]').value = rec.ime ?? "";
+        document.querySelector('[name="telefon"]').value = rec.telefon ?? "";
+      });
+  });
+}
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["email"] = document.querySelector('[name="email"]').value;
+  payload["ime"] = document.querySelector('[name="ime"]').value;
+  payload["telefon"] = document.querySelector('[name="telefon"]').value;
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Čuvanje...";
+
+  const url = editId
+    ? `http://127.0.0.1:8000/klijent/${editId}`
+    : "http://127.0.0.1:8000/klijent/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Sačuvano. Preusmeravanje na listu...";
+    setTimeout(() => { window.location.href = "list_klijent.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
