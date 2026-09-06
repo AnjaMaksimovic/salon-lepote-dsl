@@ -1,0 +1,35 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+from datetime import date, datetime, time
+from typing import List, Optional
+from pydantic import BaseModel
+from generated.enums import {{ enum_names | join(", ") }}
+
+{% for cls in classes %}
+
+class {{ cls.name }}Base(BaseModel):
+{% for attr in cls.attributes %}
+    {{ attr.name }}: {{ attr.py_type }}
+{% endfor %}
+
+
+class {{ cls.name }}Create({{ cls.name }}Base):
+{% for fk in cls.fk_fields %}
+    {{ fk.column_name }}: int
+{% endfor %}
+{% for role in cls.m2m_create_fields %}
+    {{ role }}_ids: List[int] = []
+{% endfor %}
+{% if not cls.fk_fields and not cls.m2m_create_fields %}
+    pass
+{% endif %}
+
+
+class {{ cls.name }}Out({{ cls.name }}Base):
+    id: int
+{% for fk in cls.fk_fields %}
+    {{ fk.column_name }}: int
+{% endfor %}
+
+    class Config:
+        from_attributes = True
+{% endfor %}
