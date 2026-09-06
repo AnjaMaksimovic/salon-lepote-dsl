@@ -8,6 +8,7 @@ Pokretanje:  python3 generator/generate.py
 import sys
 import os
 import re
+import shutil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -250,6 +251,14 @@ render("converter.py.j2", os.path.join(OUTPUT_DIR, "converter.py"),
 
 render("repository.py.j2", os.path.join(OUTPUT_DIR, "repository.py"),
        classes=classes_ctx, class_names=class_names, associations=m2m_associations)
+
+# business_rules.py se ne generise iz modela (rucno napisane OCL invarijante) -
+# samo se kopira u generated/, bez Jinja2 obrade
+shutil.copyfile(
+    os.path.join(os.path.dirname(__file__), "business_rules.py"),
+    os.path.join(OUTPUT_DIR, "business_rules.py"),
+)
+print(f"  generisano: {os.path.relpath(os.path.join(OUTPUT_DIR, 'business_rules.py'), BASE_DIR)}")
 
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
