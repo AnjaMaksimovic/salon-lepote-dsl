@@ -196,6 +196,27 @@ for cls_ctx in classes_ctx:
         fk["display_attr"] = target_ctx["display_attr"]
         fk["label"] = humanize(re.sub(r"_id$", "", fk["column_name"]))
 
+# M2M linkovi po klasi - za repository.py: kroz koju asocijativnu tabelu,
+# koja kolona je "moja" (own_column) a koja ciljna (target_column)
+m2m_links_by_class = {c.name: [] for c in all_classes}
+for m in m2m_associations:
+    m2m_links_by_class[m["class_a"]].append({
+        "role": m["role_a"],
+        "table_name": m["table_name"],
+        "own_column": f'{m["table_a"]}_id',
+        "target_column": f'{m["table_b"]}_id',
+        "target_class": m["class_b"],
+    })
+    m2m_links_by_class[m["class_b"]].append({
+        "role": m["role_b"],
+        "table_name": m["table_name"],
+        "own_column": f'{m["table_b"]}_id',
+        "target_column": f'{m["table_a"]}_id',
+        "target_class": m["class_a"],
+    })
+for cls_ctx in classes_ctx:
+    cls_ctx["m2m_links"] = m2m_links_by_class[cls_ctx["name"]]
+
 enums_ctx = [
     {"name": e.name, "literals": [lit.name for lit in e.literals]}
     for e in all_enums
@@ -226,6 +247,9 @@ render("dto.py.j2", os.path.join(OUTPUT_DIR, "dto.py"),
 
 render("converter.py.j2", os.path.join(OUTPUT_DIR, "converter.py"),
        classes=classes_ctx, class_names=class_names)
+
+render("repository.py.j2", os.path.join(OUTPUT_DIR, "repository.py"),
+       classes=classes_ctx, class_names=class_names, associations=m2m_associations)
 
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
