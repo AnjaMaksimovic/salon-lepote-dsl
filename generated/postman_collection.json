@@ -1,0 +1,594 @@
+{
+  "info": {
+    "name": "Salon Lepote API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Klijent",
+      "item": [
+        {
+          "name": "List Klijent",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/klijent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "klijent"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Klijent by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/klijent/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "klijent",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Klijent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/klijent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "klijent"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"primer\",\n  \"ime\": \"primer\",\n  \"telefon\": \"primer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Klijent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/klijent/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "klijent",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"primer\",\n  \"ime\": \"primer\",\n  \"telefon\": \"primer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Klijent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/klijent/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "klijent",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Paket",
+      "item": [
+        {
+          "name": "List Paket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/paket",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "paket"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Paket by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/paket/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "paket",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Paket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/paket",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "paket"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cena\": 1.0,\n  \"naziv\": \"primer\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Paket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/paket/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "paket",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cena\": 1.0,\n  \"naziv\": \"primer\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Paket",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/paket/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "paket",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Radnik",
+      "item": [
+        {
+          "name": "List Radnik",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/radnik",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "radnik"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Radnik by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/radnik/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "radnik",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Radnik",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/radnik",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "radnik"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ime\": \"primer\",\n  \"prezime\": \"primer\",\n  \"radnoVremeDo\": \"10:00:00\",\n  \"radnoVremeOd\": \"10:00:00\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Radnik",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/radnik/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "radnik",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ime\": \"primer\",\n  \"prezime\": \"primer\",\n  \"radnoVremeDo\": \"10:00:00\",\n  \"radnoVremeOd\": \"10:00:00\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Radnik",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/radnik/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "radnik",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Termin",
+      "item": [
+        {
+          "name": "List Termin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/termin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "termin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Termin by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/termin/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "termin",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Termin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/termin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "termin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datumVreme\": \"2026-09-10T10:00:00\",\n  \"status\": \"ODRZAN\",\n  \"trajanjeMin\": 1,\n  \"klijent_id\": 1,\n  \"radnik_id\": 1,\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Termin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/termin/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "termin",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datumVreme\": \"2026-09-10T10:00:00\",\n  \"status\": \"ODRZAN\",\n  \"trajanjeMin\": 1,\n  \"klijent_id\": 1,\n  \"radnik_id\": 1,\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Termin",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/termin/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "termin",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usluga",
+      "item": [
+        {
+          "name": "List Usluga",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usluga",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usluga"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Usluga by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usluga/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usluga",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Usluga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usluga",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usluga"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cena\": 1.0,\n  \"kategorija\": \"DEPILACIJA\",\n  \"naziv\": \"primer\",\n  \"trajanjeMin\": 1,\n  \"paket_ids\": [\n    1\n  ],\n  \"radnik_ids\": [\n    1\n  ],\n  \"termin_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Usluga",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usluga/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usluga",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cena\": 1.0,\n  \"kategorija\": \"DEPILACIJA\",\n  \"naziv\": \"primer\",\n  \"trajanjeMin\": 1,\n  \"paket_ids\": [\n    1\n  ],\n  \"radnik_ids\": [\n    1\n  ],\n  \"termin_ids\": [\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Usluga",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usluga/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usluga",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    }
+  ]
+}
