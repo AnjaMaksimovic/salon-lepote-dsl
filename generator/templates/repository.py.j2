@@ -1,0 +1,87 @@
+"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+from typing import List, Optional
+from sqlalchemy import select, insert, delete as sa_delete
+from sqlalchemy.orm import Session
+from generated.entities import {{ class_names | join(", ") }}
+{% set table_names = associations | map(attribute='table_name') | unique | list %}
+{% if table_names %}
+from generated.association_tables import {{ table_names | join(", ") }}
+{% endif %}
+from generated.schema import {% for n in class_names %}{{ n }}Create{% if not loop.last %}, {% endif %}{% endfor %}
+
+from generated.dto import {% for n in class_names %}{{ n }}DTO{% if not loop.last %}, {% endif %}{% endfor %}
+
+from generated.converter import {% for cls in classes %}{{ cls.lower }}_to_dto{% if not loop.last %}, {% endif %}{% endfor %}
+
+{% for cls in classes %}
+
+# ---------------------------------------------------------------------------
+# {{ cls.name }}
+# ---------------------------------------------------------------------------
+
+def create_{{ cls.lower }}(db: Session, data: {{ cls.name }}Create) -> {{ cls.name }}DTO:
+    obj = {{ cls.name }}(
+{% for attr in cls.attributes %}
+        {{ attr.name }}=data.{{ attr.name }},
+{% endfor %}
+{% for fk in cls.fk_fields %}
+        {{ fk.column_name }}=data.{{ fk.column_name }},
+{% endfor %}
+    )
+    db.add(obj)
+    db.flush()
+{% for link in cls.m2m_links %}
+    for target_id in data.{{ link.role }}_ids:
+        db.execute(insert({{ link.table_name }}).values({{ link.own_column }}=obj.id, {{ link.target_column }}=target_id))
+{% endfor %}
+    db.commit()
+    db.refresh(obj)
+    return {{ cls.lower }}_to_dto(obj)
+
+
+def get_{{ cls.lower }}(db: Session, {{ cls.lower }}_id: int) -> Optional[{{ cls.name }}DTO]:
+    obj = db.get({{ cls.name }}, {{ cls.lower }}_id)
+    return {{ cls.lower }}_to_dto(obj) if obj is not None else None
+
+
+def list_{{ cls.lower }}(db: Session) -> List[{{ cls.name }}DTO]:
+    objs = db.execute(select({{ cls.name }})).scalars().all()
+    return [{{ cls.lower }}_to_dto(o) for o in objs]
+
+
+def update_{{ cls.lower }}(db: Session, {{ cls.lower }}_id: int, data: {{ cls.name }}Create) -> Optional[{{ cls.name }}DTO]:
+    obj = db.get({{ cls.name }}, {{ cls.lower }}_id)
+    if obj is None:
+        return None
+{% for attr in cls.attributes %}
+    obj.{{ attr.name }} = data.{{ attr.name }}
+{% endfor %}
+{% for fk in cls.fk_fields %}
+    obj.{{ fk.column_name }} = data.{{ fk.column_name }}
+{% endfor %}
+{% for link in cls.m2m_links %}
+    db.execute(sa_delete({{ link.table_name }}).where({{ link.table_name }}.c.{{ link.own_column }} == {{ cls.lower }}_id))
+    for target_id in data.{{ link.role }}_ids:
+        db.execute(insert({{ link.table_name }}).values({{ link.own_column }}={{ cls.lower }}_id, {{ link.target_column }}=target_id))
+{% endfor %}
+    db.commit()
+    db.refresh(obj)
+    return {{ cls.lower }}_to_dto(obj)
+
+
+def delete_{{ cls.lower }}(db: Session, {{ cls.lower }}_id: int) -> bool:
+    obj = db.get({{ cls.name }}, {{ cls.lower }}_id)
+    if obj is None:
+        return False
+    db.delete(obj)
+    db.commit()
+    return True
+{% for link in cls.m2m_links %}
+
+def get_{{ cls.lower }}_{{ link.role }}_ids(db: Session, {{ cls.lower }}_id: int) -> List[int]:
+    rows = db.execute(
+        select({{ link.table_name }}.c.{{ link.target_column }}).where({{ link.table_name }}.c.{{ link.own_column }} == {{ cls.lower }}_id)
+    ).scalars().all()
+    return list(rows)
+{% endfor %}
+{% endfor %}

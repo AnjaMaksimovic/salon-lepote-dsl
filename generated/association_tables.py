@@ -2,24 +2,24 @@
 from sqlalchemy import Table, Column, Integer, ForeignKey
 from generated.entities import Base
 
-termin_usluga = Table(
-    "termin_usluga",
+usluga_paket = Table(
+    "usluga_paket",
     Base.metadata,
     Column("usluga_id", Integer, ForeignKey("usluga.id"), primary_key=True),
-    Column("termin_id", Integer, ForeignKey("termin.id"), primary_key=True),
+    Column("paket_id", Integer, ForeignKey("paket.id"), primary_key=True),
 )
 
-radnik_usluga = Table(
-    "radnik_usluga",
+usluga_radnik = Table(
+    "usluga_radnik",
     Base.metadata,
     Column("usluga_id", Integer, ForeignKey("usluga.id"), primary_key=True),
     Column("radnik_id", Integer, ForeignKey("radnik.id"), primary_key=True),
 )
 
-paket_usluga = Table(
-    "paket_usluga",
+usluga_termin = Table(
+    "usluga_termin",
     Base.metadata,
     Column("usluga_id", Integer, ForeignKey("usluga.id"), primary_key=True),
-    Column("paket_id", Integer, ForeignKey("paket.id"), primary_key=True),
+    Column("termin_id", Integer, ForeignKey("termin.id"), primary_key=True),
 )
 

@@ -5,6 +5,22 @@ from pydantic import BaseModel
 from generated.enums import KategorijaUsluge, StatusTermina
 
 
+class KlijentBase(BaseModel):
+    email: str
+    ime: str
+    telefon: str
+
+
+class KlijentCreate(KlijentBase):
+    pass
+
+
+class KlijentOut(KlijentBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 class PaketBase(BaseModel):
     cena: float
     naziv: str
@@ -20,62 +36,9 @@ class PaketOut(PaketBase):
     class Config:
         from_attributes = True
 
-class UslugaBase(BaseModel):
-    cena: float
-    naziv: str
-    kategorija: KategorijaUsluge
-    trajanjeMin: int
-
-
-class UslugaCreate(UslugaBase):
-    pass
-
-
-class UslugaOut(UslugaBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-class TerminBase(BaseModel):
-    trajanjeMin: int
-    status: StatusTermina
-    datumVreme: datetime
-
-
-class TerminCreate(TerminBase):
-    radnik_id: int
-    klijent_id: int
-    usluga_ids: List[int] = []
-
-
-class TerminOut(TerminBase):
-    id: int
-    radnik_id: int
-    klijent_id: int
-
-    class Config:
-        from_attributes = True
-
-class KlijentBase(BaseModel):
-    ime: str
-    telefon: str
-    email: str
-
-
-class KlijentCreate(KlijentBase):
-    pass
-
-
-class KlijentOut(KlijentBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
 class RadnikBase(BaseModel):
-    prezime: str
     ime: str
+    prezime: str
     radnoVremeDo: time
     radnoVremeOd: time
 
@@ -85,6 +48,45 @@ class RadnikCreate(RadnikBase):
 
 
 class RadnikOut(RadnikBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+class TerminBase(BaseModel):
+    datumVreme: datetime
+    status: StatusTermina
+    trajanjeMin: int
+
+
+class TerminCreate(TerminBase):
+    klijent_id: int
+    radnik_id: int
+    usluga_ids: List[int] = []
+
+
+class TerminOut(TerminBase):
+    id: int
+    klijent_id: int
+    radnik_id: int
+
+    class Config:
+        from_attributes = True
+
+class UslugaBase(BaseModel):
+    cena: float
+    kategorija: KategorijaUsluge
+    naziv: str
+    trajanjeMin: int
+
+
+class UslugaCreate(UslugaBase):
+    paket_ids: List[int] = []
+    radnik_ids: List[int] = []
+    termin_ids: List[int] = []
+
+
+class UslugaOut(UslugaBase):
     id: int
 
     class Config:
