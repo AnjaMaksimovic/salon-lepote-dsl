@@ -1,0 +1,46 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from generated.database import get_db
+from generated import repository as repo
+from generated.schema import {{ schema_names | join(", ") }}
+{% if has_validation %}
+from generated import validation
+{% endif %}
+
+router = APIRouter()
+{% for cls in classes %}
+@router.post("/{{ cls.lower }}/", response_model={{ cls.name }}Read)
+def create_{{ cls.lower }}(data: {{ cls.name }}Create, db: Session = Depends(get_db)):
+{% if cls.name in validated_classes %}
+    try:
+        validation.validiraj_{{ cls.name }}(db, data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+{% endif %}
+    return repo.create_{{ cls.lower }}(db, data.model_dump())
+
+@router.get("/{{ cls.lower }}/", response_model=list[{{ cls.name }}Read])
+def list_{{ cls.lower }}(db: Session = Depends(get_db)):
+    return repo.get_all_{{ cls.lower }}(db)
+
+@router.get("/{{ cls.lower }}/{item_id}", response_model={{ cls.name }}Read)
+def get_{{ cls.lower }}(item_id: int, db: Session = Depends(get_db)):
+    obj = repo.get_{{ cls.lower }}(db, item_id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
+    return obj
+
+@router.put("/{{ cls.lower }}/{item_id}", response_model={{ cls.name }}Read)
+def update_{{ cls.lower }}(item_id: int, data: {{ cls.name }}Update, db: Session = Depends(get_db)):
+    obj = repo.update_{{ cls.lower }}(db, item_id, data.model_dump(exclude_none=True))
+    if obj is None:
+        raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
+    return obj
+
+@router.delete("/{{ cls.lower }}/{item_id}")
+def delete_{{ cls.lower }}(item_id: int, db: Session = Depends(get_db)):
+    ok = repo.delete_{{ cls.lower }}(db, item_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
+    return {"deleted": True}
+{% endfor %}
