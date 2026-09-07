@@ -1,16 +1,10 @@
-"""AUTO-GENERISANO. Kreira primer svake klase, zatim povezuje N:N veze.
-
-Pokretanje: python -m generated.seed_data
-Izolovana provera: python -m generated.seed_data --database-url sqlite:///:memory:
-Podaci su demonstracioni; nisu garantovano validni za sva OCL pravila.
-Svako pokretanje dodaje novi skup podataka.
-"""
+"""Populates the database with sample data and links many-to-many relationships."""
 import argparse
 import json
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from generated.entities import Base
-from generated import association_tables  # Registers N:N tables.
+from generated import association_tables  # Registers many-to-many tables.
 from generated import repository as repo
 from generated import schema
 
@@ -18,7 +12,7 @@ from generated import schema
 def seed(db):
     created_ids = {}
     payloads = {}
-    print("--- Prolaz 1: kreiranje zapisa ---")
+    print("--- Pass 1: creating records ---")
 {% for cls in classes %}
     data = json.loads({{ cls.sample_body_literal }})
 {% for fk in cls.fk_overrides %}
@@ -31,10 +25,10 @@ def seed(db):
     payloads["{{ cls.name }}"] = data
     obj = repo.create_{{ cls.lower }}(db, schema.{{ cls.name }}Create(**data))
     created_ids["{{ cls.name }}"] = obj.id
-    print("Kreiran(a) {{ cls.name }} id=", obj.id)
+    print("Created {{ cls.name }} id=", obj.id)
 {% endfor %}
 
-    print("--- Prolaz 2: uspostavljanje N:N veza ---")
+    print("--- Pass 2: linking many-to-many relationships ---")
 {% for cls in classes %}
 {% if cls.m2m_link_overrides %}
     data = dict(payloads["{{ cls.name }}"])
@@ -42,14 +36,14 @@ def seed(db):
     data["{{ m.role }}_ids"] = [created_ids["{{ m.ref_class }}"]]
 {% endfor %}
     repo.update_{{ cls.lower }}(db, created_ids["{{ cls.name }}"], schema.{{ cls.name }}Create(**data))
-    print("Povezane N:N veze: {{ cls.name }}")
+    print("Linked many-to-many relationships: {{ cls.name }}")
 {% endif %}
 {% endfor %}
     return created_ids
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Insert example records and N:N links")
+    parser = argparse.ArgumentParser(description="Insert sample records and many-to-many relationships")
     parser.add_argument("--database-url", default="sqlite:///./salon.db")
     args = parser.parse_args()
     engine = create_engine(args.database_url)
@@ -61,7 +55,7 @@ def main():
         Base.metadata.create_all(engine)
         with Session(engine) as db:
             seed(db)
-        print("Seed podaci uspesno ubaceni.")
+        print("Seed data inserted successfully.")
     finally:
         engine.dispose()
 
