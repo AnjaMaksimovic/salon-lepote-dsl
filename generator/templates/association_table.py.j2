@@ -1,6 +1,10 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from sqlalchemy import Table, Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 from generated.entities import Base
+{% for name in class_names %}
+from generated.entities import {{ name }}
+{% endfor %}
 
 {% for m in associations %}
 {{ m.table_name }} = Table(
@@ -10,4 +14,13 @@ from generated.entities import Base
     Column("{{ m.table_b }}_id", Integer, ForeignKey("{{ m.table_b }}.id"), primary_key=True),
 )
 
+{% endfor %}
+
+{% for m in associations %}
+{{ m.class_a }}.{{ m.attr_on_a }} = relationship(
+    "{{ m.class_b }}", secondary={{ m.table_name }}, back_populates="{{ m.attr_on_b }}"
+)
+{{ m.class_b }}.{{ m.attr_on_b }} = relationship(
+    "{{ m.class_a }}", secondary={{ m.table_name }}, back_populates="{{ m.attr_on_a }}"
+)
 {% endfor %}

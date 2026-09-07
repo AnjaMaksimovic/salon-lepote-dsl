@@ -1,43 +1,43 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from dataclasses import dataclass
 from datetime import date, datetime, time
-from generated.enums import KategorijaUsluge, StatusTermina
+from generated.enums import ServiceCategory, AppointmentStatus
 
 
 @dataclass
-class KlijentDTO:
+class ClientDTO:
     id: int
     email: str
-    ime: str
-    telefon: str
+    name: str
+    phone: str
 
 @dataclass
-class PaketDTO:
+class PackageDTO:
     id: int
-    cena: float
-    naziv: str
+    price: float
+    name: str
 
 @dataclass
-class RadnikDTO:
+class WorkerDTO:
     id: int
-    ime: str
-    prezime: str
-    radnoVremeDo: time
-    radnoVremeOd: time
+    name: str
+    surname: str
+    workingHoursTo: time
+    workingHoursFrom: time
 
 @dataclass
-class TerminDTO:
+class AppointmentDTO:
     id: int
-    datumVreme: datetime
-    status: StatusTermina
-    trajanjeMin: int
-    klijent_id: int
-    radnik_id: int
+    dateTime: datetime
+    status: AppointmentStatus
+    durationMinutes: int
+    client_id: int
+    worker_id: int
 
 @dataclass
-class UslugaDTO:
+class ServiceDTO:
     id: int
-    cena: float
-    kategorija: KategorijaUsluge
-    naziv: str
-    trajanjeMin: int
+    price: float
+    category: ServiceCategory
+    name: str
+    durationMinutes: int

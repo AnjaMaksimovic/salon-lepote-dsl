@@ -1,10 +1,4 @@
-"""
-Glavni generator skript. Cita model/salon_model.py (B-UML model) i za svaku klasu,
-enumeraciju i OCL ograničenje generise odgovarajući Python kod koristeći Jinja2 template-e
-iz generator/templates/.
-
-Pokretanje:  python3 generator/generate.py
-"""
+"""Generate the API, persistence code, frontend and tests from the B-UML model."""
 import sys
 import os
 import re
@@ -14,6 +8,7 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from model.salon_model import domain_model
+from english import english, translate_context, CONSTRAINT_DESCRIPTIONS
 from besser.BUML.metamodel.structural import Class, Enumeration
 from jinja2 import Environment, FileSystemLoader
 
@@ -27,9 +22,7 @@ os.makedirs(FRONTEND_DIR, exist_ok=True)
 
 env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), trim_blocks=True, lstrip_blocks=True)
 
-# ---------------------------------------------------------------------------
-# 1. Mapiranje B-UML tipova
-# ---------------------------------------------------------------------------
+
 SQL_TYPE_MAP = {
     "str": "String(100)",
     "int": "Integer",
@@ -49,7 +42,7 @@ PY_TYPE_MAP = {
     "time": "time",
 }
 SAMPLE_VALUE_MAP = {
-    "str": "primer",
+    "str": "sample",
     "int": 1,
     "float": 1.0,
     "bool": True,
@@ -57,7 +50,7 @@ SAMPLE_VALUE_MAP = {
     "datetime": "2026-09-10T10:00:00",
     "time": "10:00:00",
 }
-# Tip atributa -> HTML input type (za generisane forme)
+
 HTML_INPUT_TYPE_MAP = {
     "str": "text",
     "int": "number",
@@ -69,7 +62,7 @@ HTML_INPUT_TYPE_MAP = {
 }
 
 def humanize(name: str) -> str:
-    """'radnoVremeOd' -> 'Radno vreme od', 'trajanjeMin' -> 'Trajanje min'."""
+    """Convert camelCase identifiers to readable labels."""
     spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', name).replace("_", " ")
     return spaced[:1].upper() + spaced[1:].lower()
 
@@ -79,27 +72,27 @@ enum_names_by_type = {e.name: e for e in all_enums}
 enum_names = [e.name for e in all_enums]
 
 def resolve_type(buml_type, attr_name):
-    """Vraća (sql_type, py_type, sample_value, enum_literals|None) za dati B-UML tip atributa."""
+    """Return SQL/Python types, a sample value and optional enum choices."""
     type_name = getattr(buml_type, "name", None)
     if type_name in enum_names_by_type:
         literals = sorted(lit.name for lit in enum_names_by_type[type_name].literals)
         return f"SAEnum({type_name})", type_name, literals[0], literals
     sql = SQL_TYPE_MAP.get(type_name, "String(100)")
     py = PY_TYPE_MAP.get(type_name, "str")
-    sample = SAMPLE_VALUE_MAP.get(type_name, "primer")
+    sample = SAMPLE_VALUE_MAP.get(type_name, "sample")
     return sql, py, sample, None
 
-MANY = 9999  # BESSER export koristi 9999 kao "unbounded" (*)
+MANY = 9999
 
 class_by_name = {c.name: c for c in all_classes}
-fk_fields_by_class = {c.name: [] for c in all_classes}          # 1:N -> FK kolone
-relationships_by_class = {c.name: [] for c in all_classes}       # SQLAlchemy relationship() pozivi
-m2m_associations = []                                             # za association_table
-m2m_create_fields_by_class = {c.name: [] for c in all_classes}   # role imena za *_ids polja u Create schemi
-m2m_role_to_class = {}                                            # role -> ciljna klasa (za validaciju/repo)
+fk_fields_by_class = {c.name: [] for c in all_classes}
+relationships_by_class = {c.name: [] for c in all_classes}
+m2m_associations = []
+m2m_create_fields_by_class = {c.name: [] for c in all_classes}
+m2m_role_to_class = {}
 
 for assoc in sorted(domain_model.associations, key=lambda a: a.name):
-    ends = sorted(assoc.ends, key=lambda e: e.name)  # determinizam - uvek isti redosled
+    ends = sorted(assoc.ends, key=lambda e: e.name)
     e1, e2 = ends[0], ends[1]
     is_many_to_many = e1.multiplicity.max >= MANY and e2.multiplicity.max >= MANY
 
@@ -144,7 +137,7 @@ for assoc in sorted(domain_model.associations, key=lambda a: a.name):
 
 def build_class_context(cls):
     attrs = []
-    for a in sorted(cls.attributes, key=lambda x: x.name):  # determinizam - cls.attributes je set
+    for a in sorted(cls.attributes, key=lambda x: x.name):
         sql_type, py_type, sample, options = resolve_type(a.type, a.name)
         is_enum = options is not None
         attrs.append({
@@ -176,30 +169,40 @@ def build_class_context(cls):
     }
 
 classes_ctx = [build_class_context(c) for c in all_classes]
+
+
+for cls_ctx in classes_ctx:
+    form_attributes = list(cls_ctx["attributes"])
+    names = [attribute["name"] for attribute in form_attributes]
+    if "radnoVremeOd" in names and "radnoVremeDo" in names:
+        start, end = names.index("radnoVremeOd"), names.index("radnoVremeDo")
+        if start > end:
+            form_attributes[start], form_attributes[end] = form_attributes[end], form_attributes[start]
+    cls_ctx["form_attributes"] = form_attributes
+
 class_names = [c.name for c in all_classes]
 class_ctx_by_name = {c["name"]: c for c in classes_ctx}
 
-# Klase koje se pojavljuju kao META N:N veze (moraju dobiti "Ref" schema za prikaz)
+
 m2m_target_class_names = sorted(set(m2m_role_to_class.values()))
-# role -> koji atribut ciljne klase prikazati (npr. 'usluga' -> 'naziv')
+
 m2m_role_display_attr = {
     role: class_ctx_by_name[target]["display_attr"]
     for role, target in m2m_role_to_class.items()
 }
-# role -> lowercase ime ciljne klase (za fetch URL u frontendu, npr. 'usluga' -> 'usluga')
+
 m2m_role_target_lower = {role: target.lower() for role, target in m2m_role_to_class.items()}
 
-# FK kolone dobijaju "label" (za forme/listu) i "display_attr" ciljne klase
-# (da frontend može da prikaže npr. ime klijenta umesto sirovog klijent_id broja)
+
 lower_to_class_name = {c.name.lower(): c.name for c in all_classes}
 for cls_ctx in classes_ctx:
     for fk in cls_ctx["fk_fields"]:
         target_ctx = class_ctx_by_name[lower_to_class_name[fk["ref_table"]]]
+        fk["ref_class"] = target_ctx["name"]
         fk["display_attr"] = target_ctx["display_attr"]
         fk["label"] = humanize(re.sub(r"_id$", "", fk["column_name"]))
 
-# M2M linkovi po klasi - za repository.py: kroz koju asocijativnu tabelu,
-# koja kolona je "moja" (own_column) a koja ciljna (target_column)
+
 m2m_links_by_class = {c.name: [] for c in all_classes}
 for m in m2m_associations:
     m2m_links_by_class[m["class_a"]].append({
@@ -219,8 +222,7 @@ for m in m2m_associations:
 for cls_ctx in classes_ctx:
     cls_ctx["m2m_links"] = m2m_links_by_class[cls_ctx["name"]]
 
-# Sample Create payload po klasi (za Postman kolekciju) - koristi vec izracunate
-# attr["sample"] vrednosti, fk sample id=1, m2m sample id liste=[1]
+
 for cls_ctx in classes_ctx:
     payload = {a["name"]: a["sample"] for a in cls_ctx["attributes"]}
     for fk in cls_ctx["fk_fields"]:
@@ -229,11 +231,7 @@ for cls_ctx in classes_ctx:
         payload[f"{role}_ids"] = [1]
     cls_ctx["sample_payload"] = payload
 
-# Postman kolekcija - jedna folder po klasi sa List/Get/Create/Update/Delete
-# zahtevima, prati REST konvenciju /{klasa.lower}[/{id}] koju ce routes.py.j2
-# koristiti. Kolekcija se gradi kao obican Python dict pa serijalizuje u JSON
-# ovde (umesto rucnog sastavljanja JSON-a u Jinja-i), da bi izlaz uvek bio
-# validan JSON.
+
 POSTMAN_BASE_URL = "http://localhost:8000"
 
 def build_postman_folder(cls_ctx):
@@ -278,11 +276,11 @@ postman_collection = {
 postman_collection_json = json.dumps(postman_collection, indent=2, ensure_ascii=False)
 
 enums_ctx = [
-    {"name": e.name, "literals": [lit.name for lit in e.literals]}
+    {"name": e.name, "literals": sorted(lit.name for lit in e.literals)}
     for e in all_enums
 ]
 
-# OCL prevodilac i kontekst za validaciju (deo 2b iz vodica).
+
 SUM_PATTERN = re.compile(
     r"self\.(\w+)\s*(>=|<=|==|>|<)\s*self\.(\w+)->collect\(u \| u\.(\w+)\)->sum\(\)"
 )
@@ -301,18 +299,18 @@ def translate_ocl(expr: str, description: str) -> str:
         attr, op, coll, inner = m.groups()
         target_class = m2m_role_to_class[coll]
         return (
-            f'    povezani = db.query({target_class}).filter({target_class}.id.in_(data.{coll}_ids)).all()\n'
-            f'    zbir = sum(getattr(o, "{inner}") for o in povezani)\n'
-            f'    if not (data.{attr} {op} zbir):\n'
+            f'    related = db.query({target_class}).filter({target_class}.id.in_(data.{coll}_ids)).all()\n'
+            f'    total = sum(getattr(o, "{inner}") for o in related)\n'
+            f'    if not (data.{attr} {op} total):\n'
             f'        raise ValueError({description!r})\n'
         )
     m = FORALL_PATTERN.match(body)
     if m:
         coll, other, inner_coll = m.groups()
         return (
-            f'    drugi_objekat = db.query({other.capitalize()}).filter({other.capitalize()}.id == data.{other}_id).first()\n'
-            f'    dozvoljeni_ids = {{u.id for u in getattr(drugi_objekat, "{inner_coll}")}} if drugi_objekat else set()\n'
-            f'    if not all(uid in dozvoljeni_ids for uid in data.{coll}_ids):\n'
+            f'    related_object = db.query({other.capitalize()}).filter({other.capitalize()}.id == data.{other}_id).first()\n'
+            f'    allowed_ids = {{u.id for u in getattr(related_object, "{inner_coll}")}} if related_object else set()\n'
+            f'    if not all(uid in allowed_ids for uid in data.{coll}_ids):\n'
             f'        raise ValueError({description!r})\n'
         )
     m = SIMPLE_COMPARISON_PATTERN.match(body)
@@ -322,16 +320,17 @@ def translate_ocl(expr: str, description: str) -> str:
             f'    if not (data.{attr} {op} {literal}):\n'
             f'        raise ValueError({description!r})\n'
         )
-    return f'    # TODO: nije prepoznat obrazac OCL izraza, potrebna rucna dopuna\n    # {body}\n    pass\n'
+    return f'    # Unsupported OCL pattern; extend the translator for this expression.\n    # {body}\n    pass\n'
 
 
 constraints_ctx = []
 classes_with_constraints = {}
 for c in sorted(domain_model.constraints, key=lambda x: x.name):
-    py_body = translate_ocl(c.expression, c.description)
+    description = CONSTRAINT_DESCRIPTIONS.get(c.name, "The request violates a domain constraint.")
+    py_body = translate_ocl(c.expression, description)
     constraints_ctx.append({
         "name": c.name,
-        "description": c.description,
+        "description": description,
         "expression": c.expression,
         "python_body": py_body,
     })
@@ -343,7 +342,27 @@ classes_with_constraints_ctx = [
 validated_classes = set(classes_with_constraints.keys())
 
 
-# Seed order: only FK dependencies affect creation; N:N links follow later.
+for c in classes_ctx:
+    for attr in c["attributes"]:
+        attr["label"] = humanize(english(attr["name"]))
+    for fk in c["fk_fields"]:
+        fk["label"] = humanize(english(fk["column_name"].removesuffix("_id")))
+classes_ctx = translate_context(classes_ctx)
+class_names = translate_context(class_names)
+enum_names = translate_context(enum_names)
+enums_ctx = translate_context(enums_ctx)
+m2m_associations = translate_context(m2m_associations)
+m2m_role_to_class = translate_context(m2m_role_to_class)
+m2m_role_display_attr = translate_context(m2m_role_display_attr)
+m2m_role_target_lower = translate_context(m2m_role_target_lower)
+constraints_ctx = translate_context(constraints_ctx)
+classes_with_constraints_ctx = translate_context(classes_with_constraints_ctx)
+validated_classes = {english(name) for name in validated_classes}
+postman_collection["info"]["name"] = "Beauty Salon API"
+postman_collection["item"] = [build_postman_folder(c) for c in classes_ctx]
+postman_collection_json = json.dumps(postman_collection, indent=2, ensure_ascii=False)
+
+
 lower_to_ctx = {c["lower"]: c for c in classes_ctx}
 _remaining = {c["name"]: c for c in classes_ctx}
 _deps = {name: {lower_to_ctx[fk["ref_table"]]["name"] for fk in c["fk_fields"]}
@@ -376,9 +395,9 @@ def render(template_name, output_path, **ctx):
     content = tpl.render(**ctx)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(content)
-    print(f"  generisano: {os.path.relpath(output_path, BASE_DIR)}")
+    print(f"  generated: {os.path.relpath(output_path, BASE_DIR)}")
 
-print("Generisanje pokrenuto...\n")
+print("Generation started...\n")
 
 render("enum.py.j2", os.path.join(OUTPUT_DIR, "enums.py"), enums=enums_ctx)
 
@@ -386,7 +405,7 @@ render("entity.py.j2", os.path.join(OUTPUT_DIR, "entities.py"),
        classes=classes_ctx, enum_names=enum_names)
 
 render("association_table.py.j2", os.path.join(OUTPUT_DIR, "association_tables.py"),
-       associations=m2m_associations)
+       associations=m2m_associations, class_names=class_names)
 
 render("schema.py.j2", os.path.join(OUTPUT_DIR, "schema.py"),
        classes=classes_ctx, enum_names=enum_names)
@@ -421,21 +440,21 @@ for cls in classes_ctx:
 render("frontend_index.j2", os.path.join(FRONTEND_DIR, "index.html"), classes=classes_ctx)
 render("style.css.j2", os.path.join(FRONTEND_DIR, "style.css"))
 
-# business_rules.py se ne generise iz modela (rucno napisane OCL invarijante) -
-# samo se kopira u generated/, bez Jinja2 obrade
+
 shutil.copyfile(
     os.path.join(os.path.dirname(__file__), "business_rules.py"),
     os.path.join(OUTPUT_DIR, "business_rules.py"),
 )
-print(f"  generisano: {os.path.relpath(os.path.join(OUTPUT_DIR, 'business_rules.py'), BASE_DIR)}")
+print(f"  generated: {os.path.relpath(os.path.join(OUTPUT_DIR, 'business_rules.py'), BASE_DIR)}")
 
 render("postman_collection.j2", os.path.join(OUTPUT_DIR, "postman_collection.json"),
        collection_json=postman_collection_json)
 
 render("seed_data.py.j2", os.path.join(OUTPUT_DIR, "seed_data.py"), classes=seed_order)
 render("tests.py.j2", os.path.join(OUTPUT_DIR, "test_api.py"), classes=seed_order)
+render("database.py.j2", os.path.join(OUTPUT_DIR, "database.py"))
 
-# generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
+
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
 
-print("\nGenerisanje završeno.")
+print("\nGeneration complete.")

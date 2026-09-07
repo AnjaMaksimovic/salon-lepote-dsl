@@ -1,27 +1,27 @@
-<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!-- Generated from the domain model. -->
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Salon lepote - administracija</title>
+<title>Beauty Salon - Administration</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
-<h1>Administracija</h1>
-<p class="subtitle">Grub frontend, generisan iz B-UML modela.</p>
+<h1>Administration</h1>
+<p class="subtitle">Manage clients, workers, services, packages and appointments.</p>
 
 {% for cls in classes %}
 <div class="card">
   <span class="name">{{ cls.name }}</span>
   <span class="actions">
-    <a href="list_{{ cls.lower }}.html">Lista</a>
-    <a href="form_{{ cls.lower }}.html">+ Dodaj</a>
+    <a href="list_{{ cls.lower }}.html">List</a>
+    <a href="form_{{ cls.lower }}.html">+ Add</a>
   </span>
 </div>
 {% endfor %}
 
-<p class="hint">Backend API dokumentacija: <a href="http://127.0.0.1:8000/docs">/docs</a></p>
+<p class="hint">API documentation: <a href="/docs">/docs</a></p>
 </div>
 </body>
 </html>

@@ -13,64 +13,64 @@ def seed(db):
     created_ids = {}
     payloads = {}
     print("--- Pass 1: creating records ---")
-    data = json.loads('{"email": "primer", "ime": "primer", "telefon": "primer"}')
+    data = json.loads('{"email": "sample", "name": "sample", "phone": "sample"}')
     # Pydantic converts ISO dates/times and enum values for the repository.
-    payloads["Klijent"] = data
-    obj = repo.create_klijent(db, schema.KlijentCreate(**data))
-    created_ids["Klijent"] = obj.id
-    print("Created Klijent id=", obj.id)
-    data = json.loads('{"cena": 1.0, "naziv": "primer", "usluga_ids": [1]}')
-    data["usluga_ids"] = []
+    payloads["Client"] = data
+    obj = repo.create_client(db, schema.ClientCreate(**data))
+    created_ids["Client"] = obj.id
+    print("Created Client id=", obj.id)
+    data = json.loads('{"price": 1.0, "name": "sample", "service_ids": [1]}')
+    data["service_ids"] = []
     # Pydantic converts ISO dates/times and enum values for the repository.
-    payloads["Paket"] = data
-    obj = repo.create_paket(db, schema.PaketCreate(**data))
-    created_ids["Paket"] = obj.id
-    print("Created Paket id=", obj.id)
-    data = json.loads('{"ime": "primer", "prezime": "primer", "radnoVremeDo": "10:00:00", "radnoVremeOd": "10:00:00", "usluga_ids": [1]}')
-    data["usluga_ids"] = []
+    payloads["Package"] = data
+    obj = repo.create_package(db, schema.PackageCreate(**data))
+    created_ids["Package"] = obj.id
+    print("Created Package id=", obj.id)
+    data = json.loads('{"price": 1.0, "category": "HAIR_REMOVAL", "name": "sample", "durationMinutes": 1, "package_ids": [1], "worker_ids": [1], "appointment_ids": [1]}')
+    data["package_ids"] = []
+    data["worker_ids"] = []
+    data["appointment_ids"] = []
     # Pydantic converts ISO dates/times and enum values for the repository.
-    payloads["Radnik"] = data
-    obj = repo.create_radnik(db, schema.RadnikCreate(**data))
-    created_ids["Radnik"] = obj.id
-    print("Created Radnik id=", obj.id)
-    data = json.loads('{"cena": 1.0, "kategorija": "DEPILACIJA", "naziv": "primer", "trajanjeMin": 1, "paket_ids": [1], "radnik_ids": [1], "termin_ids": [1]}')
-    data["paket_ids"] = []
-    data["radnik_ids"] = []
-    data["termin_ids"] = []
+    payloads["Service"] = data
+    obj = repo.create_service(db, schema.ServiceCreate(**data))
+    created_ids["Service"] = obj.id
+    print("Created Service id=", obj.id)
+    data = json.loads('{"name": "sample", "surname": "sample", "workingHoursTo": "10:00:00", "workingHoursFrom": "10:00:00", "service_ids": [1]}')
+    data["service_ids"] = []
     # Pydantic converts ISO dates/times and enum values for the repository.
-    payloads["Usluga"] = data
-    obj = repo.create_usluga(db, schema.UslugaCreate(**data))
-    created_ids["Usluga"] = obj.id
-    print("Created Usluga id=", obj.id)
-    data = json.loads('{"datumVreme": "2026-09-10T10:00:00", "status": "ODRZAN", "trajanjeMin": 1, "klijent_id": 1, "radnik_id": 1, "usluga_ids": [1]}')
-    data["klijent_id"] = created_ids["Klijent"]
-    data["radnik_id"] = created_ids["Radnik"]
-    data["usluga_ids"] = []
+    payloads["Worker"] = data
+    obj = repo.create_worker(db, schema.WorkerCreate(**data))
+    created_ids["Worker"] = obj.id
+    print("Created Worker id=", obj.id)
+    data = json.loads('{"dateTime": "2026-09-10T10:00:00", "status": "COMPLETED", "durationMinutes": 1, "client_id": 1, "worker_id": 1, "service_ids": [1]}')
+    data["client_id"] = created_ids["Client"]
+    data["worker_id"] = created_ids["Worker"]
+    data["service_ids"] = []
     # Pydantic converts ISO dates/times and enum values for the repository.
-    payloads["Termin"] = data
-    obj = repo.create_termin(db, schema.TerminCreate(**data))
-    created_ids["Termin"] = obj.id
-    print("Created Termin id=", obj.id)
+    payloads["Appointment"] = data
+    obj = repo.create_appointment(db, schema.AppointmentCreate(**data))
+    created_ids["Appointment"] = obj.id
+    print("Created Appointment id=", obj.id)
 
     print("--- Pass 2: linking many-to-many relationships ---")
-    data = dict(payloads["Paket"])
-    data["usluga_ids"] = [created_ids["Usluga"]]
-    repo.update_paket(db, created_ids["Paket"], schema.PaketCreate(**data))
-    print("Linked many-to-many relationships: Paket")
-    data = dict(payloads["Radnik"])
-    data["usluga_ids"] = [created_ids["Usluga"]]
-    repo.update_radnik(db, created_ids["Radnik"], schema.RadnikCreate(**data))
-    print("Linked many-to-many relationships: Radnik")
-    data = dict(payloads["Usluga"])
-    data["paket_ids"] = [created_ids["Paket"]]
-    data["radnik_ids"] = [created_ids["Radnik"]]
-    data["termin_ids"] = [created_ids["Termin"]]
-    repo.update_usluga(db, created_ids["Usluga"], schema.UslugaCreate(**data))
-    print("Linked many-to-many relationships: Usluga")
-    data = dict(payloads["Termin"])
-    data["usluga_ids"] = [created_ids["Usluga"]]
-    repo.update_termin(db, created_ids["Termin"], schema.TerminCreate(**data))
-    print("Linked many-to-many relationships: Termin")
+    data = dict(payloads["Package"])
+    data["service_ids"] = [created_ids["Service"]]
+    repo.update_package(db, created_ids["Package"], schema.PackageCreate(**data))
+    print("Linked many-to-many relationships: Package")
+    data = dict(payloads["Service"])
+    data["package_ids"] = [created_ids["Package"]]
+    data["worker_ids"] = [created_ids["Worker"]]
+    data["appointment_ids"] = [created_ids["Appointment"]]
+    repo.update_service(db, created_ids["Service"], schema.ServiceCreate(**data))
+    print("Linked many-to-many relationships: Service")
+    data = dict(payloads["Worker"])
+    data["service_ids"] = [created_ids["Service"]]
+    repo.update_worker(db, created_ids["Worker"], schema.WorkerCreate(**data))
+    print("Linked many-to-many relationships: Worker")
+    data = dict(payloads["Appointment"])
+    data["service_ids"] = [created_ids["Service"]]
+    repo.update_appointment(db, created_ids["Appointment"], schema.AppointmentCreate(**data))
+    print("Linked many-to-many relationships: Appointment")
     return created_ids
 
 

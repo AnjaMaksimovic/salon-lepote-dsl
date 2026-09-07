@@ -1,53 +1,49 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO.
-Izmene radite u model/salon_model.py i ponovo pokrenite generate.py.
-OCL ograničenja se proveravaju nad podacima zahteva pre upisa u bazu.
-Povezani objekti učitavaju se iz baze na osnovu ID vrednosti iz zahteva.
-"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from sqlalchemy.orm import Session
-from generated.entities import Klijent, Paket, Radnik, Termin, Usluga
+from generated.entities import Client, Package, Worker, Appointment, Service
 
-def validiraj_PaketJeftinijiOdPojedinacnih(db: Session, data) -> None:
-    """Cena paketa mora biti niža od zbira cena pojedinačnih usluga koje sadrži.
+def validate_PackageDiscount(db: Session, data) -> None:
+    """The package price must be lower than the total price of its services.
 
-    Izvorno OCL ograničenje:
-    context Paket inv PaketJeftinijiOdPojedinacnih:   self.cena < self.usluga->collect(u | u.cena)->sum()
+    Source OCL constraint:
+    context Package inv PackageDiscount:   self.price < self.service->collect(u | u.price)->sum()
     """
-    povezani = db.query(Usluga).filter(Usluga.id.in_(data.usluga_ids)).all()
-    zbir = sum(getattr(o, "cena") for o in povezani)
-    if not (data.cena < zbir):
-        raise ValueError('Cena paketa mora biti niža od zbira cena pojedinačnih usluga koje sadrži.')
+    related = db.query(Service).filter(Service.id.in_(data.service_ids)).all()
+    total = sum(getattr(o, "price") for o in related)
+    if not (data.price < total):
+        raise ValueError('The package price must be lower than the total price of its services.')
 
 
-def validiraj_TrajanjeDovoljno(db: Session, data) -> None:
-    """Trajanje termina mora biti dovoljno da pokrije sve zakazane usluge.
+def validate_SufficientDuration(db: Session, data) -> None:
+    """The appointment must be long enough to cover all selected services.
 
-    Izvorno OCL ograničenje:
-    context Termin inv TrajanjeDovoljno:   self.trajanjeMin >= self.usluga->collect(u | u.trajanjeMin)->sum()
+    Source OCL constraint:
+    context Appointment inv SufficientDuration:   self.durationMinutes >= self.service->collect(u | u.durationMinutes)->sum()
     """
-    povezani = db.query(Usluga).filter(Usluga.id.in_(data.usluga_ids)).all()
-    zbir = sum(getattr(o, "trajanjeMin") for o in povezani)
-    if not (data.trajanjeMin >= zbir):
-        raise ValueError('Trajanje termina mora biti dovoljno da pokrije sve zakazane usluge.')
+    related = db.query(Service).filter(Service.id.in_(data.service_ids)).all()
+    total = sum(getattr(o, "durationMinutes") for o in related)
+    if not (data.durationMinutes >= total):
+        raise ValueError('The appointment must be long enough to cover all selected services.')
 
 
-def validiraj_UslugaKompatibilnaSaRadnikom(db: Session, data) -> None:
-    """Usluge zakazane u terminu moraju biti u okviru specijalizacija dodeljenog radnika.
+def validate_WorkerServiceCompatibility(db: Session, data) -> None:
+    """The selected worker must be qualified to perform every selected service.
 
-    Izvorno OCL ograničenje:
-    context Termin inv UslugaKompatibilnaSaRadnikom:   self.usluga->forAll(u | self.radnik.usluga->includes(u))
+    Source OCL constraint:
+    context Appointment inv WorkerServiceCompatibility:   self.service->forAll(u | self.worker.service->includes(u))
     """
-    drugi_objekat = db.query(Radnik).filter(Radnik.id == data.radnik_id).first()
-    dozvoljeni_ids = {u.id for u in getattr(drugi_objekat, "usluga")} if drugi_objekat else set()
-    if not all(uid in dozvoljeni_ids for uid in data.usluga_ids):
-        raise ValueError('Usluge zakazane u terminu moraju biti u okviru specijalizacija dodeljenog radnika.')
+    related_object = db.query(Worker).filter(Worker.id == data.worker_id).first()
+    allowed_ids = {u.id for u in getattr(related_object, "service")} if related_object else set()
+    if not all(uid in allowed_ids for uid in data.service_ids):
+        raise ValueError('The selected worker must be qualified to perform every selected service.')
 
 
-def validiraj_Paket(db: Session, data) -> None:
-    """Proverava sva OCL ograničenja definisana za Paket."""
-    validiraj_PaketJeftinijiOdPojedinacnih(db, data)
+def validate_Package(db: Session, data) -> None:
+    """Validates all OCL constraints for Package."""
+    validate_PackageDiscount(db, data)
 
-def validiraj_Termin(db: Session, data) -> None:
-    """Proverava sva OCL ograničenja definisana za Termin."""
-    validiraj_TrajanjeDovoljno(db, data)
-    validiraj_UslugaKompatibilnaSaRadnikom(db, data)
+def validate_Appointment(db: Session, data) -> None:
+    """Validates all OCL constraints for Appointment."""
+    validate_SufficientDuration(db, data)
+    validate_WorkerServiceCompatibility(db, data)
 

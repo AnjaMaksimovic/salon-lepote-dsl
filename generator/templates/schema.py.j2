@@ -1,11 +1,19 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Request and response schemas for the generated API."""
 from datetime import date, datetime, time
-from typing import List, Optional
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field
 from generated.enums import {{ enum_names | join(", ") }}
 
 {% for cls in classes %}
+class {{ cls.name }}Ref(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+{% for attr in cls.attributes %}
+    {{ attr.name }}: {{ attr.py_type }}
+{% endfor %}
 
+{% endfor %}
+{% for cls in classes %}
 class {{ cls.name }}Base(BaseModel):
 {% for attr in cls.attributes %}
     {{ attr.name }}: {{ attr.py_type }}
@@ -17,19 +25,35 @@ class {{ cls.name }}Create({{ cls.name }}Base):
     {{ fk.column_name }}: int
 {% endfor %}
 {% for role in cls.m2m_create_fields %}
-    {{ role }}_ids: List[int] = []
+    {{ role }}_ids: list[int] = Field(default_factory=list)
 {% endfor %}
 {% if not cls.fk_fields and not cls.m2m_create_fields %}
     pass
 {% endif %}
 
 
-class {{ cls.name }}Out({{ cls.name }}Base):
+class {{ cls.name }}Read({{ cls.name }}Base):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 {% for fk in cls.fk_fields %}
     {{ fk.column_name }}: int
 {% endfor %}
+{% for link in cls.m2m_links %}
+    {{ link.role }}: list[{{ link.target_class }}Ref] = Field(default_factory=list)
+{% endfor %}
 
-    class Config:
-        from_attributes = True
+
+class {{ cls.name }}Update(BaseModel):
+{% for attr in cls.attributes %}
+    {{ attr.name }}: Optional[{{ attr.py_type }}] = None
+{% endfor %}
+{% for fk in cls.fk_fields %}
+    {{ fk.column_name }}: Optional[int] = None
+{% endfor %}
+{% for role in cls.m2m_create_fields %}
+    {{ role }}_ids: Optional[list[int]] = None
+{% endfor %}
+
+
+{{ cls.name }}Out = {{ cls.name }}Read
 {% endfor %}

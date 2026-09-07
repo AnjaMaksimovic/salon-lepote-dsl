@@ -1,17 +1,17 @@
-<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
+<!-- Generated from the domain model. -->
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ cls.name }} - nov unos</title>
+<title>{{ cls.name }} - New record</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
-<h1 id="naslov">Novi {{ cls.name }}</h1>
-<div class="nav"><a href="list_{{ cls.lower }}.html">&larr; Nazad na listu</a></div>
+<h1 id="naslov">New {{ cls.name }}</h1>
+<div class="nav"><a href="list_{{ cls.lower }}.html">&larr; Back to list</a></div>
 <form id="f">
-{% for attr in cls.attributes %}
+{% for attr in cls.form_attributes %}
 {% if attr.is_enum %}
   <label>{{ attr.label }}
     <select name="{{ attr.name }}">
@@ -34,225 +34,77 @@
 {% for fk in cls.fk_fields %}
   <label>{{ fk.label }}
     <select name="{{ fk.column_name }}" data-fk-source="{{ fk.ref_table }}" data-fk-display="{{ fk.display_attr }}">
-      <option value="">- učitavanje -</option>
+      <option value="">- loading -</option>
     </select>
   </label>
 {% endfor %}
 {% for role in cls.m2m_create_fields %}
   <fieldset class="checkbox-group" data-m2m-source="{{ m2m_role_target_lower[role] }}" data-m2m-display="{{ m2m_role_display_attr[role] }}" data-m2m-role="{{ role }}">
-    <legend>{{ role|capitalize }} (izaberi jednu ili više)</legend>
-    <div class="checkbox-group-items">- učitavanje -</div>
+    <legend>{{ role|capitalize }} (select one or more)</legend>
+    <div class="checkbox-group-items">- loading -</div>
   </fieldset>
 {% endfor %}
-  <button type="submit">Sačuvaj</button>
+  <button type="submit">Save</button>
 </form>
 <pre id="out"></pre>
 </div>
 <script>
-const params = new URLSearchParams(location.search);
-const editId = params.get("id");
-if (editId) {
-  document.title = "{{ cls.name }} - izmena";
-  document.getElementById("naslov").textContent = "Izmeni {{ cls.name }}";
-  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
 }
-
-{% if cls.fk_fields or cls.m2m_create_fields %}
-function popuniIzbor(url, render) {
-  return fetch(url).then(r => r.json()).then(render);
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+  return data;
 }
-
-const opcijeUcitane = [
-{% for fk in cls.fk_fields %}
-  popuniIzbor("http://127.0.0.1:8000/{{ fk.ref_table }}/", rows => {
-    const sel = document.querySelector('select[name="{{ fk.column_name }}"]');
-    sel.innerHTML = rows.length
-      ? rows.map(o => `<option value="${o.id}">${o.{{ fk.display_attr }} ?? ("#" + o.id)}</option>`).join("")
-      : '<option value="">- nema unosa, dodajte prvo {{ fk.ref_table }} -</option>';
-  }),
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-  popuniIzbor("http://127.0.0.1:8000/{{ m2m_role_target_lower[role] }}/", rows => {
-    const wrap = document.querySelector('fieldset[data-m2m-role="{{ role }}"] .checkbox-group-items');
-    wrap.innerHTML = rows.length
-      ? rows.map(o => `<label><input type="checkbox" name="{{ role }}_ids" value="${o.id}"> ${o.{{ m2m_role_display_attr[role] }} ?? ("#" + o.id)}</label>`).join("")
-      : '<span class="muted">Nema unosa u {{ m2m_role_target_lower[role] }}.</span>';
-  }),
-{% endfor %}
-];
-{% else %}
-const opcijeUcitane = [];
-{% endif %}
-
-if (editId) {
-  Promise.all(opcijeUcitane).then(() => {
-    fetch(`http://127.0.0.1:8000/{{ cls.lower }}/${editId}`)
-      .then(r => r.json())
-      .then(rec => {
-{% for attr in cls.attributes %}
-{% if attr.py_type == "bool" %}
-        document.querySelector('[name="{{ attr.name }}"]').checked = !!rec.{{ attr.name }};
-{% else %}
-        document.querySelector('[name="{{ attr.name }}"]').value = rec.{{ attr.name }} ?? "";
-{% endif %}
-{% endfor %}
-{% for fk in cls.fk_fields %}
-        document.querySelector('select[name="{{ fk.column_name }}"]').value = rec.{{ fk.column_name }};
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-        const izabrano_{{ role }} = new Set((rec.{{ role }} || []).map(o => o.id));
-        document.querySelectorAll('input[name="{{ role }}_ids"]').forEach(cb => {
-          cb.checked = izabrano_{{ role }}.has(parseInt(cb.value, 10));
-        });
-{% endfor %}
-      });
-  });
-}
-
-document.getElementById("f").addEventListener("submit", function(e) {
-  e.preventDefault();
-  const payload = {};
-{% for attr in cls.attributes %}
-{% if attr.py_type == "int" %}
-  payload["{{ attr.name }}"] = parseInt(document.querySelector('[name="{{ attr.name }}"]').value, 10);
-{% elif attr.py_type == "float" %}
-  payload["{{ attr.name }}"] = parseFloat(document.querySelector('[name="{{ attr.name }}"]').value);
-{% elif attr.py_type == "bool" %}
-  payload["{{ attr.name }}"] = document.querySelector('[name="{{ attr.name }}"]').checked;
-{% else %}
-  payload["{{ attr.name }}"] = document.querySelector('[name="{{ attr.name }}"]').value;
-{% endif %}
-{% endfor %}
-{% for fk in cls.fk_fields %}
-  payload["{{ fk.column_name }}"] = parseInt(document.querySelector('[name="{{ fk.column_name }}"]').value, 10);
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-  payload["{{ role }}_ids"] = Array.from(document.querySelectorAll('input[name="{{ role }}_ids"]:checked')).map(el => parseInt(el.value, 10));
-{% endfor %}
-
-  const out = document.getElementById("out");
-  const btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true;
-  out.classList.remove("error");
-  out.textContent = "Čuvanje...";
-
-  const url = editId
-    ? `http://127.0.0.1:8000/{{ cls.lower }}/${editId}`
-    : "http://127.0.0.1:8000/{{ cls.lower }}/";
-
-  fetch(url, {
-    method: editId ? "PUT" : "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(payload)
-  })
-  .then(async r => {
-    const data = await r.json();
-    if (!r.ok) throw data;
-    return data;
-  })
-  .then(() => {
-    out.textContent = "Sačuvano. Preusmeravanje na listu...";
-    setTimeout(() => { window.location.href = "list_{{ cls.lower }}.html"; }, 500);
-  })
-  .catch(err => {
-    out.classList.add("error");
-    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
-    btn.disabled = false;
-  });
+// Keep scrolling from changing numeric values accidentally.
+document.querySelectorAll('input[type="number"]').forEach(input => {
+  input.addEventListener('wheel', event => {
+    if (document.activeElement === input) event.preventDefault();
+  }, { passive: false });
 });
-</script>
-</body>
-</html>
-<!-- AUTO-GENERISANO - NE MENJATI RUČNO -->
-<!DOCTYPE html>
-<html lang="sr">
-<head>
-<meta charset="UTF-8">
-<title>{{ cls.name }} - nov unos</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="wrap">
-<h1 id="naslov">Novi {{ cls.name }}</h1>
-<div class="nav"><a href="list_{{ cls.lower }}.html">&larr; Nazad na listu</a></div>
-<form id="f">
-{% for attr in cls.attributes %}
-{% if attr.is_enum %}
-  <label>{{ attr.label }}
-    <select name="{{ attr.name }}">
-{% for opt in attr.options %}
-      <option value="{{ opt }}">{{ opt }}</option>
-{% endfor %}
-    </select>
-  </label>
-{% elif attr.py_type == "bool" %}
-  <label class="checkbox-inline">
-    <input name="{{ attr.name }}" type="checkbox">
-    {{ attr.label }}
-  </label>
-{% else %}
-  <label>{{ attr.label }}
-    <input name="{{ attr.name }}" type="{{ attr.html_type }}"{% if attr.py_type == "float" %} step="any"{% endif %}>
-  </label>
-{% endif %}
-{% endfor %}
-{% for fk in cls.fk_fields %}
-  <label>{{ fk.label }}
-    <select name="{{ fk.column_name }}" data-fk-source="{{ fk.ref_table }}" data-fk-display="{{ fk.display_attr }}">
-      <option value="">- učitavanje -</option>
-    </select>
-  </label>
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-  <fieldset class="checkbox-group" data-m2m-source="{{ m2m_role_target_lower[role] }}" data-m2m-display="{{ m2m_role_display_attr[role] }}" data-m2m-role="{{ role }}">
-    <legend>{{ role|capitalize }} (izaberi jednu ili više)</legend>
-    <div class="checkbox-group-items">- učitavanje -</div>
-  </fieldset>
-{% endfor %}
-  <button type="submit">Sačuvaj</button>
-</form>
-<pre id="out"></pre>
-</div>
-<script>
+
 const params = new URLSearchParams(location.search);
 const editId = params.get("id");
 if (editId) {
-  document.title = "{{ cls.name }} - izmena";
-  document.getElementById("naslov").textContent = "Izmeni {{ cls.name }}";
-  document.querySelector('button[type="submit"]').textContent = "Sačuvaj izmene";
+  document.title = "{{ cls.name }} - Edit";
+  document.getElementById("naslov").textContent = "Edit {{ cls.name }}";
+  document.querySelector('button[type="submit"]').textContent = "Save changes";
 }
 
 {% if cls.fk_fields or cls.m2m_create_fields %}
-function popuniIzbor(url, render) {
-  return fetch(url).then(r => r.json()).then(render);
+function populateOptions(url, render) {
+  return requestJson(url).then(render);
 }
 
-const opcijeUcitane = [
+const optionsLoaded = [
 {% for fk in cls.fk_fields %}
-  popuniIzbor("http://127.0.0.1:8000/{{ fk.ref_table }}/", rows => {
+  populateOptions("/{{ fk.ref_table }}/", rows => {
     const sel = document.querySelector('select[name="{{ fk.column_name }}"]');
     sel.innerHTML = rows.length
-      ? rows.map(o => `<option value="${o.id}">${o.{{ fk.display_attr }} ?? ("#" + o.id)}</option>`).join("")
-      : '<option value="">- nema unosa, dodajte prvo {{ fk.ref_table }} -</option>';
+      ? rows.map(o => `<option value="${o.id}">${escapeHtml(o.{{ fk.display_attr }} ?? ("#" + o.id))}</option>`).join("")
+      : '<option value="">- no records; add a {{ fk.ref_table }} first -</option>';
   }),
 {% endfor %}
 {% for role in cls.m2m_create_fields %}
-  popuniIzbor("http://127.0.0.1:8000/{{ m2m_role_target_lower[role] }}/", rows => {
+  populateOptions("/{{ m2m_role_target_lower[role] }}/", rows => {
     const wrap = document.querySelector('fieldset[data-m2m-role="{{ role }}"] .checkbox-group-items');
     wrap.innerHTML = rows.length
-      ? rows.map(o => `<label><input type="checkbox" name="{{ role }}_ids" value="${o.id}"> ${o.{{ m2m_role_display_attr[role] }} ?? ("#" + o.id)}</label>`).join("")
-      : '<span class="muted">Nema unosa u {{ m2m_role_target_lower[role] }}.</span>';
+      ? rows.map(o => `<label><input type="checkbox" name="{{ role }}_ids" value="${o.id}"> ${escapeHtml(o.{{ m2m_role_display_attr[role] }} ?? ("#" + o.id))}</label>`).join("")
+      : '<span class="muted">No {{ m2m_role_target_lower[role] }} records available.</span>';
   }),
 {% endfor %}
 ];
 {% else %}
-const opcijeUcitane = [];
+const optionsLoaded = [];
 {% endif %}
 
 if (editId) {
-  Promise.all(opcijeUcitane).then(() => {
-    fetch(`http://127.0.0.1:8000/{{ cls.lower }}/${editId}`)
-      .then(r => r.json())
+  Promise.all(optionsLoaded).then(() => {
+    return requestJson(`/{{ cls.lower }}/${editId}`)
       .then(rec => {
 {% for attr in cls.attributes %}
 {% if attr.py_type == "bool" %}
@@ -265,14 +117,15 @@ if (editId) {
         document.querySelector('select[name="{{ fk.column_name }}"]').value = rec.{{ fk.column_name }};
 {% endfor %}
 {% for role in cls.m2m_create_fields %}
-        const izabrano_{{ role }} = new Set((rec.{{ role }} || []).map(o => o.id));
+        const selected_{{ role }} = new Set((rec.{{ role }} || []).map(o => o.id));
         document.querySelectorAll('input[name="{{ role }}_ids"]').forEach(cb => {
-          cb.checked = izabrano_{{ role }}.has(parseInt(cb.value, 10));
+          cb.checked = selected_{{ role }}.has(parseInt(cb.value, 10));
         });
 {% endfor %}
       });
-  });
+  }).catch(err => { document.getElementById("out").textContent = err.message; });
 }
+Promise.all(optionsLoaded).catch(err => { document.getElementById("out").textContent = err.message; });
 
 document.getElementById("f").addEventListener("submit", function(e) {
   e.preventDefault();
@@ -299,11 +152,11 @@ document.getElementById("f").addEventListener("submit", function(e) {
   const btn = e.target.querySelector('button[type="submit"]');
   btn.disabled = true;
   out.classList.remove("error");
-  out.textContent = "Čuvanje...";
+  out.textContent = "Saving...";
 
   const url = editId
-    ? `http://127.0.0.1:8000/{{ cls.lower }}/${editId}`
-    : "http://127.0.0.1:8000/{{ cls.lower }}/";
+    ? `/{{ cls.lower }}/${editId}`
+    : "/{{ cls.lower }}/";
 
   fetch(url, {
     method: editId ? "PUT" : "POST",
@@ -316,12 +169,12 @@ document.getElementById("f").addEventListener("submit", function(e) {
     return data;
   })
   .then(() => {
-    out.textContent = "Sačuvano. Preusmeravanje na listu...";
+    out.textContent = "Saved. Returning to the list...";
     setTimeout(() => { window.location.href = "list_{{ cls.lower }}.html"; }, 500);
   })
   .catch(err => {
     out.classList.add("error");
-    out.textContent = "Greška: " + (err && err.detail ? JSON.stringify(err.detail) : JSON.stringify(err));
+    out.textContent = "Error: " + (err && err.detail ? JSON.stringify(err.detail) : (err.message || JSON.stringify(err)));
     btn.disabled = false;
   });
 });

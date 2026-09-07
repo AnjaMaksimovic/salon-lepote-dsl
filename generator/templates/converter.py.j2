@@ -1,4 +1,4 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from generated.dto import {% for n in class_names %}{{ n }}DTO{% if not loop.last %}, {% endif %}{% endfor %}
 
 from generated.schema import {% for n in class_names %}{{ n }}Out{% if not loop.last %}, {% endif %}{% endfor %}
@@ -6,7 +6,7 @@ from generated.schema import {% for n in class_names %}{{ n }}Out{% if not loop.
 {% for cls in classes %}
 
 def {{ cls.lower }}_to_dto(obj) -> {{ cls.name }}DTO:
-    """SQLAlchemy {{ cls.name }} entitet -> {{ cls.name }}DTO (bez ORM zavisnosti)."""
+    """SQLAlchemy {{ cls.name }} entity -> {{ cls.name }}DTO (without ORM dependencies)."""
     return {{ cls.name }}DTO(
         id=obj.id,
 {% for attr in cls.attributes %}
@@ -19,11 +19,11 @@ def {{ cls.lower }}_to_dto(obj) -> {{ cls.name }}DTO:
 
 
 def {{ cls.lower }}_dto_to_out(dto: {{ cls.name }}DTO) -> {{ cls.name }}Out:
-    """{{ cls.name }}DTO -> {{ cls.name }}Out (Pydantic sema za API odgovor)."""
+    """{{ cls.name }}DTO -> {{ cls.name }}Out (Pydantic API response schema)."""
     return {{ cls.name }}Out(**dto.__dict__)
 
 
 def {{ cls.lower }}_to_out(obj) -> {{ cls.name }}Out:
-    """SQLAlchemy {{ cls.name }} entitet -> {{ cls.name }}Out, direktno preko DTO-a."""
+    """SQLAlchemy {{ cls.name }} entity -> {{ cls.name }}Out, via a DTO."""
     return {{ cls.lower }}_dto_to_out({{ cls.lower }}_to_dto(obj))
 {% endfor %}

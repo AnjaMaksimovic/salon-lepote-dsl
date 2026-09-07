@@ -1,0 +1,107 @@
+<!-- Generated from the domain model. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Client - New record</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">New Client</h1>
+<div class="nav"><a href="list_client.html">&larr; Back to list</a></div>
+<form id="f">
+  <label>Email
+    <input name="email" type="text">
+  </label>
+  <label>Name
+    <input name="name" type="text">
+  </label>
+  <label>Phone
+    <input name="phone" type="text">
+  </label>
+  <button type="submit">Save</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+  return data;
+}
+// Keep scrolling from changing numeric values accidentally.
+document.querySelectorAll('input[type="number"]').forEach(input => {
+  input.addEventListener('wheel', event => {
+    if (document.activeElement === input) event.preventDefault();
+  }, { passive: false });
+});
+
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Client - Edit";
+  document.getElementById("naslov").textContent = "Edit Client";
+  document.querySelector('button[type="submit"]').textContent = "Save changes";
+}
+
+const optionsLoaded = [];
+
+if (editId) {
+  Promise.all(optionsLoaded).then(() => {
+    return requestJson(`/client/${editId}`)
+      .then(rec => {
+        document.querySelector('[name="email"]').value = rec.email ?? "";
+        document.querySelector('[name="name"]').value = rec.name ?? "";
+        document.querySelector('[name="phone"]').value = rec.phone ?? "";
+      });
+  }).catch(err => { document.getElementById("out").textContent = err.message; });
+}
+Promise.all(optionsLoaded).catch(err => { document.getElementById("out").textContent = err.message; });
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["email"] = document.querySelector('[name="email"]').value;
+  payload["name"] = document.querySelector('[name="name"]').value;
+  payload["phone"] = document.querySelector('[name="phone"]').value;
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Saving...";
+
+  const url = editId
+    ? `/client/${editId}`
+    : "/client/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Saved. Returning to the list...";
+    setTimeout(() => { window.location.href = "list_client.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Error: " + (err && err.detail ? JSON.stringify(err.detail) : (err.message || JSON.stringify(err)));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
