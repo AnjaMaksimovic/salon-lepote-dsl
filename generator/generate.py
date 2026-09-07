@@ -343,6 +343,34 @@ classes_with_constraints_ctx = [
 validated_classes = set(classes_with_constraints.keys())
 
 
+# Seed order: only FK dependencies affect creation; N:N links follow later.
+lower_to_ctx = {c["lower"]: c for c in classes_ctx}
+_remaining = {c["name"]: c for c in classes_ctx}
+_deps = {name: {lower_to_ctx[fk["ref_table"]]["name"] for fk in c["fk_fields"]}
+         for name, c in _remaining.items()}
+seed_order = []
+while _remaining:
+    completed = {c["name"] for c in seed_order}
+    ready = sorted(name for name in _remaining if _deps[name].issubset(completed))
+    if not ready:
+        raise ValueError("Cyclic FK dependencies prevent seeding: " + ", ".join(sorted(_remaining)))
+    for name in ready:
+        seed_order.append(_remaining.pop(name))
+_referenced_class_names = set().union(*_deps.values()) if _deps else set()
+for c in seed_order:
+    c["sample_body_literal"] = repr(json.dumps(c["sample_payload"], ensure_ascii=False))
+    c["is_m2m_target"] = c["name"] in set(m2m_role_to_class.values())
+    c["is_fk_target"] = c["name"] in _referenced_class_names
+    c["fk_overrides"] = [
+        {"column": fk["column_name"], "ref_class": lower_to_ctx[fk["ref_table"]]["name"]}
+        for fk in c["fk_fields"]
+    ]
+    c["m2m_link_overrides"] = [
+        {"role": link["role"], "ref_class": link["target_class"]}
+        for link in c["m2m_links"]
+    ]
+    c["has_constraints"] = c["name"] in validated_classes
+
 def render(template_name, output_path, **ctx):
     tpl = env.get_template(template_name)
     content = tpl.render(**ctx)
@@ -403,6 +431,8 @@ print(f"  generisano: {os.path.relpath(os.path.join(OUTPUT_DIR, 'business_rules.
 
 render("postman_collection.j2", os.path.join(OUTPUT_DIR, "postman_collection.json"),
        collection_json=postman_collection_json)
+
+render("seed_data.py.j2", os.path.join(OUTPUT_DIR, "seed_data.py"), classes=seed_order)
 
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
