@@ -1,0 +1,64 @@
+"""Populates the database with sample data and links many-to-many relationships."""
+import argparse
+import json
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session
+from generated.entities import Base
+from generated import association_tables  # Registers many-to-many tables.
+from generated import repository as repo
+from generated import schema
+
+
+def seed(db):
+    created_ids = {}
+    payloads = {}
+    print("--- Pass 1: creating records ---")
+{% for cls in classes %}
+    data = json.loads({{ cls.sample_body_literal }})
+{% for fk in cls.fk_overrides %}
+    data["{{ fk.column }}"] = created_ids["{{ fk.ref_class }}"]
+{% endfor %}
+{% for m in cls.m2m_link_overrides %}
+    data["{{ m.role }}_ids"] = []
+{% endfor %}
+    # Pydantic converts ISO dates/times and enum values for the repository.
+    payloads["{{ cls.name }}"] = data
+    obj = repo.create_{{ cls.lower }}(db, schema.{{ cls.name }}Create(**data))
+    created_ids["{{ cls.name }}"] = obj.id
+    print("Created {{ cls.name }} id=", obj.id)
+{% endfor %}
+
+    print("--- Pass 2: linking many-to-many relationships ---")
+{% for cls in classes %}
+{% if cls.m2m_link_overrides %}
+    data = dict(payloads["{{ cls.name }}"])
+{% for m in cls.m2m_link_overrides %}
+    data["{{ m.role }}_ids"] = [created_ids["{{ m.ref_class }}"]]
+{% endfor %}
+    repo.update_{{ cls.lower }}(db, created_ids["{{ cls.name }}"], schema.{{ cls.name }}Create(**data))
+    print("Linked many-to-many relationships: {{ cls.name }}")
+{% endif %}
+{% endfor %}
+    return created_ids
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Insert sample records and many-to-many relationships")
+    parser.add_argument("--database-url", default="sqlite:///./salon.db")
+    args = parser.parse_args()
+    engine = create_engine(args.database_url)
+    if engine.dialect.name == "sqlite":
+        @event.listens_for(engine, "connect")
+        def enable_foreign_keys(connection, _):
+            connection.execute("PRAGMA foreign_keys=ON")
+    try:
+        Base.metadata.create_all(engine)
+        with Session(engine) as db:
+            seed(db)
+        print("Seed data inserted successfully.")
+    finally:
+        engine.dispose()
+
+
+if __name__ == "__main__":
+    main()
