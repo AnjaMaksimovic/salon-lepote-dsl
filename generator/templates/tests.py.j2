@@ -1,7 +1,7 @@
 """API tests using an isolated in-memory database.
 
 Run: python -m pytest generated/test_api.py -v
-API tests require the application and database modules from commit 6.
+Each test uses fresh sample records and an isolated database.
 """
 import importlib
 import json
@@ -22,10 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture
 def api(tmp_path, monkeypatch):
     if not (ROOT / "main.py").exists() or not (ROOT / "generated/database.py").exists():
-        pytest.skip("API integration pending: main.py and generated/database.py are required (commit 6)")
+        pytest.fail("Run the generator and provide main.py before running API tests")
     # Confine relative database paths and application startup writes to a temporary folder.
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DATABASE_URL", "sqlite://")
     (tmp_path / "generated/frontend").mkdir(parents=True)
     from fastapi.testclient import TestClient
     app = importlib.import_module("main").app
@@ -63,6 +64,11 @@ def test_{{ cls.lower }}_crud(api):
 {% for m in cls.m2m_link_overrides %}
     payload["{{ m.role }}_ids"] = []
 {% endfor %}
+{% if cls.name == "Package" %}
+    # The model requires the package price to be below its services' total.
+    payload["price"] = 0.5
+    payload["service_ids"] = [ids["Service"]]
+{% endif %}
     response = client.post("/{{ cls.lower }}/", json=payload)
     assert response.status_code == 200, response.text
     created_id = response.json()["id"]
@@ -107,6 +113,9 @@ def test_{{ cls.lower }}_many_to_many_links(api):
 {% for m in cls.m2m_link_overrides %}
     payload["{{ m.role }}_ids"] = [ids["{{ m.ref_class }}"]]
 {% endfor %}
+{% if cls.name == "Package" %}
+    payload["price"] = 0.5
+{% endif %}
     response = client.put(f"/{{ cls.lower }}/{ids['{{ cls.name }}']}", json=payload)
     assert response.status_code == 200, response.text
     with Session(engine) as db:
@@ -121,12 +130,18 @@ def test_{{ cls.lower }}_many_to_many_links(api):
     payload["{{ m.role }}_ids"] = []
 {% endfor %}
     response = client.put(f"/{{ cls.lower }}/{ids['{{ cls.name }}']}", json=payload)
+{% if cls.name == "Package" %}
+    # Empty services would violate the package price rule; keep existing links.
+    assert response.status_code == 400, response.text
+{% else %}
     assert response.status_code == 200, response.text
+{% endif %}
     with Session(engine) as db:
 {% for link in cls.m2m_links %}
         table = association_tables.{{ link.table_name }}
         assert db.scalars(select(table.c.{{ link.target_column }}).where(
-            table.c.{{ link.own_column }} == ids["{{ cls.name }}"])).all() == []
+            table.c.{{ link.own_column }} == ids["{{ cls.name }}"])).all() == {% if cls.name == "Package" %}[ids["{{ link.target_class }}"]]{% else %}[]{% endif %}
+
 {% endfor %}
 {% endif %}
 {% endfor %}

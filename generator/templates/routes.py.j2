@@ -1,46 +1,90 @@
+"""CRUD endpoints with reference and business-rule validation."""
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from generated.database import get_db
-from generated import repository as repo
-from generated.schema import {{ schema_names | join(", ") }}
-{% if has_validation %}
-from generated import validation
-{% endif %}
+from generated import repository as repo, entities, schema, validation
 
 router = APIRouter()
+
+
+def write_record(db, operation):
+    try:
+        return operation()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Record is referenced or contains invalid relationships") from error
+
 {% for cls in classes %}
-@router.post("/{{ cls.lower }}/", response_model={{ cls.name }}Read)
-def create_{{ cls.lower }}(data: {{ cls.name }}Create, db: Session = Depends(get_db)):
+
+def validate_{{ cls.lower }}(db, data):
+{% for fk in cls.fk_fields %}
+    if db.get(entities.{{ fk.ref_class }}, data.{{ fk.column_name }}) is None:
+        raise HTTPException(status_code=400, detail="Unknown {{ fk.column_name }}")
+{% endfor %}
+{% for link in cls.m2m_links %}
+    data.{{ link.role }}_ids = list(dict.fromkeys(data.{{ link.role }}_ids))
+    for item_id in data.{{ link.role }}_ids:
+        if db.get(entities.{{ link.target_class }}, item_id) is None:
+            raise HTTPException(status_code=400, detail="Unknown {{ link.role }} ID")
+{% endfor %}
 {% if cls.name in validated_classes %}
     try:
-        validation.validiraj_{{ cls.name }}(db, data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        validation.validate_{{ cls.name }}(db, data)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 {% endif %}
-    return repo.create_{{ cls.lower }}(db, data.model_dump())
+    return data
 
-@router.get("/{{ cls.lower }}/", response_model=list[{{ cls.name }}Read])
+
+@router.post("/{{ cls.lower }}/", response_model=schema.{{ cls.name }}Read)
+def create_{{ cls.lower }}(data: schema.{{ cls.name }}Create, db: Session = Depends(get_db)):
+    validate_{{ cls.lower }}(db, data)
+    obj = write_record(db, lambda: repo.create_{{ cls.lower }}(db, data))
+    return db.get(entities.{{ cls.name }}, obj.id)
+
+
+@router.get("/{{ cls.lower }}/", response_model=list[schema.{{ cls.name }}Read])
 def list_{{ cls.lower }}(db: Session = Depends(get_db)):
-    return repo.get_all_{{ cls.lower }}(db)
+    return db.query(entities.{{ cls.name }}).order_by(entities.{{ cls.name }}.id).all()
 
-@router.get("/{{ cls.lower }}/{item_id}", response_model={{ cls.name }}Read)
+
+@router.get("/{{ cls.lower }}/{item_id}", response_model=schema.{{ cls.name }}Read)
 def get_{{ cls.lower }}(item_id: int, db: Session = Depends(get_db)):
-    obj = repo.get_{{ cls.lower }}(db, item_id)
+    obj = db.get(entities.{{ cls.name }}, item_id)
     if obj is None:
         raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
     return obj
 
-@router.put("/{{ cls.lower }}/{item_id}", response_model={{ cls.name }}Read)
-def update_{{ cls.lower }}(item_id: int, data: {{ cls.name }}Update, db: Session = Depends(get_db)):
-    obj = repo.update_{{ cls.lower }}(db, item_id, data.model_dump(exclude_none=True))
-    if obj is None:
-        raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
-    return obj
+
+@router.put("/{{ cls.lower }}/{item_id}", response_model=schema.{{ cls.name }}Read)
+def update_{{ cls.lower }}(item_id: int, data: schema.{{ cls.name }}Update, db: Session = Depends(get_db)):
+    obj = get_{{ cls.lower }}(item_id, db)
+    current = {
+{% for attr in cls.attributes %}
+        "{{ attr.name }}": obj.{{ attr.name }},
+{% endfor %}
+{% for fk in cls.fk_fields %}
+        "{{ fk.column_name }}": obj.{{ fk.column_name }},
+{% endfor %}
+{% for link in cls.m2m_links %}
+        "{{ link.role }}_ids": repo.get_{{ cls.lower }}_{{ link.role }}_ids(db, item_id),
+{% endfor %}
+    }
+    current.update(data.model_dump(exclude_unset=True))
+    try:
+        merged = schema.{{ cls.name }}Create(**current)
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail="Update contains invalid or null fields") from error
+    validate_{{ cls.lower }}(db, merged)
+    write_record(db, lambda: repo.update_{{ cls.lower }}(db, item_id, merged))
+    return db.get(entities.{{ cls.name }}, item_id)
+
 
 @router.delete("/{{ cls.lower }}/{item_id}")
 def delete_{{ cls.lower }}(item_id: int, db: Session = Depends(get_db)):
-    ok = repo.delete_{{ cls.lower }}(db, item_id)
-    if not ok:
+    if not write_record(db, lambda: repo.delete_{{ cls.lower }}(db, item_id)):
         raise HTTPException(status_code=404, detail="{{ cls.name }} not found")
     return {"deleted": True}
 {% endfor %}

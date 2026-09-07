@@ -1,47 +1,47 @@
 {
   "info": {
-    "name": "Salon Lepote API",
+    "name": "Beauty Salon API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Klijent",
+      "name": "Client",
       "item": [
         {
-          "name": "List Klijent",
+          "name": "List Client",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/klijent",
+              "raw": "{{base_url}}/client",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "klijent"
+                "client"
               ]
             }
           }
         },
         {
-          "name": "Get Klijent by id",
+          "name": "Get Client by id",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/klijent/1",
+              "raw": "{{base_url}}/client/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "klijent",
+                "client",
                 "1"
               ]
             }
           }
         },
         {
-          "name": "Create Klijent",
+          "name": "Create Client",
           "request": {
             "method": "POST",
             "header": [
@@ -51,17 +51,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/klijent",
+              "raw": "{{base_url}}/client",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "klijent"
+                "client"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"primer\",\n  \"ime\": \"primer\",\n  \"telefon\": \"primer\"\n}",
+              "raw": "{\n  \"email\": \"sample\",\n  \"name\": \"sample\",\n  \"phone\": \"sample\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -71,7 +71,7 @@
           }
         },
         {
-          "name": "Update Klijent",
+          "name": "Update Client",
           "request": {
             "method": "PUT",
             "header": [
@@ -81,18 +81,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/klijent/1",
+              "raw": "{{base_url}}/client/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "klijent",
+                "client",
                 "1"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"primer\",\n  \"ime\": \"primer\",\n  \"telefon\": \"primer\"\n}",
+              "raw": "{\n  \"email\": \"sample\",\n  \"name\": \"sample\",\n  \"phone\": \"sample\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -102,17 +102,17 @@
           }
         },
         {
-          "name": "Delete Klijent",
+          "name": "Delete Client",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/klijent/1",
+              "raw": "{{base_url}}/client/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "klijent",
+                "client",
                 "1"
               ]
             }
@@ -121,43 +121,43 @@
       ]
     },
     {
-      "name": "Paket",
+      "name": "Package",
       "item": [
         {
-          "name": "List Paket",
+          "name": "List Package",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/paket",
+              "raw": "{{base_url}}/package",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "paket"
+                "package"
               ]
             }
           }
         },
         {
-          "name": "Get Paket by id",
+          "name": "Get Package by id",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/paket/1",
+              "raw": "{{base_url}}/package/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "paket",
+                "package",
                 "1"
               ]
             }
           }
         },
         {
-          "name": "Create Paket",
+          "name": "Create Package",
           "request": {
             "method": "POST",
             "header": [
@@ -167,17 +167,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/paket",
+              "raw": "{{base_url}}/package",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "paket"
+                "package"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cena\": 1.0,\n  \"naziv\": \"primer\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"price\": 1.0,\n  \"name\": \"sample\",\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -187,7 +187,7 @@
           }
         },
         {
-          "name": "Update Paket",
+          "name": "Update Package",
           "request": {
             "method": "PUT",
             "header": [
@@ -197,18 +197,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/paket/1",
+              "raw": "{{base_url}}/package/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "paket",
+                "package",
                 "1"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cena\": 1.0,\n  \"naziv\": \"primer\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"price\": 1.0,\n  \"name\": \"sample\",\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -218,17 +218,17 @@
           }
         },
         {
-          "name": "Delete Paket",
+          "name": "Delete Package",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/paket/1",
+              "raw": "{{base_url}}/package/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "paket",
+                "package",
                 "1"
               ]
             }
@@ -237,43 +237,43 @@
       ]
     },
     {
-      "name": "Radnik",
+      "name": "Worker",
       "item": [
         {
-          "name": "List Radnik",
+          "name": "List Worker",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/radnik",
+              "raw": "{{base_url}}/worker",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "radnik"
+                "worker"
               ]
             }
           }
         },
         {
-          "name": "Get Radnik by id",
+          "name": "Get Worker by id",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/radnik/1",
+              "raw": "{{base_url}}/worker/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "radnik",
+                "worker",
                 "1"
               ]
             }
           }
         },
         {
-          "name": "Create Radnik",
+          "name": "Create Worker",
           "request": {
             "method": "POST",
             "header": [
@@ -283,17 +283,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/radnik",
+              "raw": "{{base_url}}/worker",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "radnik"
+                "worker"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ime\": \"primer\",\n  \"prezime\": \"primer\",\n  \"radnoVremeDo\": \"10:00:00\",\n  \"radnoVremeOd\": \"10:00:00\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"name\": \"sample\",\n  \"surname\": \"sample\",\n  \"workingHoursTo\": \"10:00:00\",\n  \"workingHoursFrom\": \"10:00:00\",\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -303,7 +303,7 @@
           }
         },
         {
-          "name": "Update Radnik",
+          "name": "Update Worker",
           "request": {
             "method": "PUT",
             "header": [
@@ -313,18 +313,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/radnik/1",
+              "raw": "{{base_url}}/worker/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "radnik",
+                "worker",
                 "1"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ime\": \"primer\",\n  \"prezime\": \"primer\",\n  \"radnoVremeDo\": \"10:00:00\",\n  \"radnoVremeOd\": \"10:00:00\",\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"name\": \"sample\",\n  \"surname\": \"sample\",\n  \"workingHoursTo\": \"10:00:00\",\n  \"workingHoursFrom\": \"10:00:00\",\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -334,17 +334,17 @@
           }
         },
         {
-          "name": "Delete Radnik",
+          "name": "Delete Worker",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/radnik/1",
+              "raw": "{{base_url}}/worker/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "radnik",
+                "worker",
                 "1"
               ]
             }
@@ -353,43 +353,43 @@
       ]
     },
     {
-      "name": "Termin",
+      "name": "Appointment",
       "item": [
         {
-          "name": "List Termin",
+          "name": "List Appointment",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/termin",
+              "raw": "{{base_url}}/appointment",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "termin"
+                "appointment"
               ]
             }
           }
         },
         {
-          "name": "Get Termin by id",
+          "name": "Get Appointment by id",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/termin/1",
+              "raw": "{{base_url}}/appointment/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "termin",
+                "appointment",
                 "1"
               ]
             }
           }
         },
         {
-          "name": "Create Termin",
+          "name": "Create Appointment",
           "request": {
             "method": "POST",
             "header": [
@@ -399,17 +399,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/termin",
+              "raw": "{{base_url}}/appointment",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "termin"
+                "appointment"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"datumVreme\": \"2026-09-10T10:00:00\",\n  \"status\": \"ODRZAN\",\n  \"trajanjeMin\": 1,\n  \"klijent_id\": 1,\n  \"radnik_id\": 1,\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"dateTime\": \"2026-09-10T10:00:00\",\n  \"status\": \"COMPLETED\",\n  \"durationMinutes\": 1,\n  \"client_id\": 1,\n  \"worker_id\": 1,\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -419,7 +419,7 @@
           }
         },
         {
-          "name": "Update Termin",
+          "name": "Update Appointment",
           "request": {
             "method": "PUT",
             "header": [
@@ -429,18 +429,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/termin/1",
+              "raw": "{{base_url}}/appointment/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "termin",
+                "appointment",
                 "1"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"datumVreme\": \"2026-09-10T10:00:00\",\n  \"status\": \"ODRZAN\",\n  \"trajanjeMin\": 1,\n  \"klijent_id\": 1,\n  \"radnik_id\": 1,\n  \"usluga_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"dateTime\": \"2026-09-10T10:00:00\",\n  \"status\": \"COMPLETED\",\n  \"durationMinutes\": 1,\n  \"client_id\": 1,\n  \"worker_id\": 1,\n  \"service_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -450,17 +450,17 @@
           }
         },
         {
-          "name": "Delete Termin",
+          "name": "Delete Appointment",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/termin/1",
+              "raw": "{{base_url}}/appointment/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "termin",
+                "appointment",
                 "1"
               ]
             }
@@ -469,43 +469,43 @@
       ]
     },
     {
-      "name": "Usluga",
+      "name": "Service",
       "item": [
         {
-          "name": "List Usluga",
+          "name": "List Service",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/usluga",
+              "raw": "{{base_url}}/service",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "usluga"
+                "service"
               ]
             }
           }
         },
         {
-          "name": "Get Usluga by id",
+          "name": "Get Service by id",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/usluga/1",
+              "raw": "{{base_url}}/service/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "usluga",
+                "service",
                 "1"
               ]
             }
           }
         },
         {
-          "name": "Create Usluga",
+          "name": "Create Service",
           "request": {
             "method": "POST",
             "header": [
@@ -515,17 +515,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/usluga",
+              "raw": "{{base_url}}/service",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "usluga"
+                "service"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cena\": 1.0,\n  \"kategorija\": \"DEPILACIJA\",\n  \"naziv\": \"primer\",\n  \"trajanjeMin\": 1,\n  \"paket_ids\": [\n    1\n  ],\n  \"radnik_ids\": [\n    1\n  ],\n  \"termin_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"price\": 1.0,\n  \"category\": \"HAIR_REMOVAL\",\n  \"name\": \"sample\",\n  \"durationMinutes\": 1,\n  \"package_ids\": [\n    1\n  ],\n  \"worker_ids\": [\n    1\n  ],\n  \"appointment_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -535,7 +535,7 @@
           }
         },
         {
-          "name": "Update Usluga",
+          "name": "Update Service",
           "request": {
             "method": "PUT",
             "header": [
@@ -545,18 +545,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/usluga/1",
+              "raw": "{{base_url}}/service/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "usluga",
+                "service",
                 "1"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cena\": 1.0,\n  \"kategorija\": \"DEPILACIJA\",\n  \"naziv\": \"primer\",\n  \"trajanjeMin\": 1,\n  \"paket_ids\": [\n    1\n  ],\n  \"radnik_ids\": [\n    1\n  ],\n  \"termin_ids\": [\n    1\n  ]\n}",
+              "raw": "{\n  \"price\": 1.0,\n  \"category\": \"HAIR_REMOVAL\",\n  \"name\": \"sample\",\n  \"durationMinutes\": 1,\n  \"package_ids\": [\n    1\n  ],\n  \"worker_ids\": [\n    1\n  ],\n  \"appointment_ids\": [\n    1\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -566,17 +566,17 @@
           }
         },
         {
-          "name": "Delete Usluga",
+          "name": "Delete Service",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/usluga/1",
+              "raw": "{{base_url}}/service/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "usluga",
+                "service",
                 "1"
               ]
             }

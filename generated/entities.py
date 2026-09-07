@@ -1,51 +1,51 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime, Time, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import DeclarativeBase, relationship
-from generated.enums import KategorijaUsluge, StatusTermina
+from generated.enums import ServiceCategory, AppointmentStatus
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class Klijent(Base):
-    __tablename__ = "klijent"
+class Client(Base):
+    __tablename__ = "client"
     id = Column(Integer, primary_key=True)
     email = Column(String(100))
-    ime = Column(String(100))
-    telefon = Column(String(100))
-    termin = relationship("Termin", back_populates="klijent")
+    name = Column(String(100))
+    phone = Column(String(100))
+    appointment = relationship("Appointment", back_populates="client")
 
-class Paket(Base):
-    __tablename__ = "paket"
+class Package(Base):
+    __tablename__ = "package"
     id = Column(Integer, primary_key=True)
-    cena = Column(Float)
-    naziv = Column(String(100))
+    price = Column(Float)
+    name = Column(String(100))
 
-class Radnik(Base):
-    __tablename__ = "radnik"
+class Worker(Base):
+    __tablename__ = "worker"
     id = Column(Integer, primary_key=True)
-    ime = Column(String(100))
-    prezime = Column(String(100))
-    radnoVremeDo = Column(Time)
-    radnoVremeOd = Column(Time)
-    termin = relationship("Termin", back_populates="radnik")
+    name = Column(String(100))
+    surname = Column(String(100))
+    workingHoursTo = Column(Time)
+    workingHoursFrom = Column(Time)
+    appointment = relationship("Appointment", back_populates="worker")
 
-class Termin(Base):
-    __tablename__ = "termin"
+class Appointment(Base):
+    __tablename__ = "appointment"
     id = Column(Integer, primary_key=True)
-    datumVreme = Column(DateTime)
-    status = Column(SAEnum(StatusTermina))
-    trajanjeMin = Column(Integer)
-    klijent_id = Column(Integer, ForeignKey("klijent.id"), nullable=False)
-    radnik_id = Column(Integer, ForeignKey("radnik.id"), nullable=False)
-    klijent = relationship("Klijent", back_populates="termin")
-    radnik = relationship("Radnik", back_populates="termin")
+    dateTime = Column(DateTime)
+    status = Column(SAEnum(AppointmentStatus))
+    durationMinutes = Column(Integer)
+    client_id = Column(Integer, ForeignKey("client.id"), nullable=False)
+    worker_id = Column(Integer, ForeignKey("worker.id"), nullable=False)
+    client = relationship("Client", back_populates="appointment")
+    worker = relationship("Worker", back_populates="appointment")
 
-class Usluga(Base):
-    __tablename__ = "usluga"
+class Service(Base):
+    __tablename__ = "service"
     id = Column(Integer, primary_key=True)
-    cena = Column(Float)
-    kategorija = Column(SAEnum(KategorijaUsluge))
-    naziv = Column(String(100))
-    trajanjeMin = Column(Integer)
+    price = Column(Float)
+    category = Column(SAEnum(ServiceCategory))
+    name = Column(String(100))
+    durationMinutes = Column(Integer)

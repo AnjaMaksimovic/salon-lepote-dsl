@@ -1,54 +1,54 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 from typing import List, Optional
 from sqlalchemy import select, insert, delete as sa_delete
 from sqlalchemy.orm import Session
-from generated.entities import Klijent, Paket, Radnik, Termin, Usluga
-from generated.association_tables import usluga_paket, usluga_radnik, usluga_termin
-from generated.schema import KlijentCreate, PaketCreate, RadnikCreate, TerminCreate, UslugaCreate
-from generated.dto import KlijentDTO, PaketDTO, RadnikDTO, TerminDTO, UslugaDTO
-from generated.converter import klijent_to_dto, paket_to_dto, radnik_to_dto, termin_to_dto, usluga_to_dto
+from generated.entities import Client, Package, Worker, Appointment, Service
+from generated.association_tables import service_package, service_worker, service_appointment
+from generated.schema import ClientCreate, PackageCreate, WorkerCreate, AppointmentCreate, ServiceCreate
+from generated.dto import ClientDTO, PackageDTO, WorkerDTO, AppointmentDTO, ServiceDTO
+from generated.converter import client_to_dto, package_to_dto, worker_to_dto, appointment_to_dto, service_to_dto
 
 # ---------------------------------------------------------------------------
-# Klijent
+# Client
 # ---------------------------------------------------------------------------
 
-def create_klijent(db: Session, data: KlijentCreate) -> KlijentDTO:
-    obj = Klijent(
+def create_client(db: Session, data: ClientCreate) -> ClientDTO:
+    obj = Client(
         email=data.email,
-        ime=data.ime,
-        telefon=data.telefon,
+        name=data.name,
+        phone=data.phone,
     )
     db.add(obj)
     db.flush()
     db.commit()
     db.refresh(obj)
-    return klijent_to_dto(obj)
+    return client_to_dto(obj)
 
 
-def get_klijent(db: Session, klijent_id: int) -> Optional[KlijentDTO]:
-    obj = db.get(Klijent, klijent_id)
-    return klijent_to_dto(obj) if obj is not None else None
+def get_client(db: Session, client_id: int) -> Optional[ClientDTO]:
+    obj = db.get(Client, client_id)
+    return client_to_dto(obj) if obj is not None else None
 
 
-def list_klijent(db: Session) -> List[KlijentDTO]:
-    objs = db.execute(select(Klijent)).scalars().all()
-    return [klijent_to_dto(o) for o in objs]
+def list_client(db: Session) -> List[ClientDTO]:
+    objs = db.execute(select(Client)).scalars().all()
+    return [client_to_dto(o) for o in objs]
 
 
-def update_klijent(db: Session, klijent_id: int, data: KlijentCreate) -> Optional[KlijentDTO]:
-    obj = db.get(Klijent, klijent_id)
+def update_client(db: Session, client_id: int, data: ClientCreate) -> Optional[ClientDTO]:
+    obj = db.get(Client, client_id)
     if obj is None:
         return None
     obj.email = data.email
-    obj.ime = data.ime
-    obj.telefon = data.telefon
+    obj.name = data.name
+    obj.phone = data.phone
     db.commit()
     db.refresh(obj)
-    return klijent_to_dto(obj)
+    return client_to_dto(obj)
 
 
-def delete_klijent(db: Session, klijent_id: int) -> bool:
-    obj = db.get(Klijent, klijent_id)
+def delete_client(db: Session, client_id: int) -> bool:
+    obj = db.get(Client, client_id)
     if obj is None:
         return False
     db.delete(obj)
@@ -56,261 +56,261 @@ def delete_klijent(db: Session, klijent_id: int) -> bool:
     return True
 
 # ---------------------------------------------------------------------------
-# Paket
+# Package
 # ---------------------------------------------------------------------------
 
-def create_paket(db: Session, data: PaketCreate) -> PaketDTO:
-    obj = Paket(
-        cena=data.cena,
-        naziv=data.naziv,
+def create_package(db: Session, data: PackageCreate) -> PackageDTO:
+    obj = Package(
+        price=data.price,
+        name=data.name,
     )
     db.add(obj)
     db.flush()
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_paket).values(paket_id=obj.id, usluga_id=target_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_package).values(package_id=obj.id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return paket_to_dto(obj)
+    return package_to_dto(obj)
 
 
-def get_paket(db: Session, paket_id: int) -> Optional[PaketDTO]:
-    obj = db.get(Paket, paket_id)
-    return paket_to_dto(obj) if obj is not None else None
+def get_package(db: Session, package_id: int) -> Optional[PackageDTO]:
+    obj = db.get(Package, package_id)
+    return package_to_dto(obj) if obj is not None else None
 
 
-def list_paket(db: Session) -> List[PaketDTO]:
-    objs = db.execute(select(Paket)).scalars().all()
-    return [paket_to_dto(o) for o in objs]
+def list_package(db: Session) -> List[PackageDTO]:
+    objs = db.execute(select(Package)).scalars().all()
+    return [package_to_dto(o) for o in objs]
 
 
-def update_paket(db: Session, paket_id: int, data: PaketCreate) -> Optional[PaketDTO]:
-    obj = db.get(Paket, paket_id)
+def update_package(db: Session, package_id: int, data: PackageCreate) -> Optional[PackageDTO]:
+    obj = db.get(Package, package_id)
     if obj is None:
         return None
-    obj.cena = data.cena
-    obj.naziv = data.naziv
-    db.execute(sa_delete(usluga_paket).where(usluga_paket.c.paket_id == paket_id))
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_paket).values(paket_id=paket_id, usluga_id=target_id))
+    obj.price = data.price
+    obj.name = data.name
+    db.execute(sa_delete(service_package).where(service_package.c.package_id == package_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_package).values(package_id=package_id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return paket_to_dto(obj)
+    return package_to_dto(obj)
 
 
-def delete_paket(db: Session, paket_id: int) -> bool:
-    obj = db.get(Paket, paket_id)
+def delete_package(db: Session, package_id: int) -> bool:
+    obj = db.get(Package, package_id)
     if obj is None:
         return False
     db.delete(obj)
     db.commit()
     return True
 
-def get_paket_usluga_ids(db: Session, paket_id: int) -> List[int]:
+def get_package_service_ids(db: Session, package_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_paket.c.usluga_id).where(usluga_paket.c.paket_id == paket_id)
+        select(service_package.c.service_id).where(service_package.c.package_id == package_id)
     ).scalars().all()
     return list(rows)
 
 # ---------------------------------------------------------------------------
-# Radnik
+# Worker
 # ---------------------------------------------------------------------------
 
-def create_radnik(db: Session, data: RadnikCreate) -> RadnikDTO:
-    obj = Radnik(
-        ime=data.ime,
-        prezime=data.prezime,
-        radnoVremeDo=data.radnoVremeDo,
-        radnoVremeOd=data.radnoVremeOd,
+def create_worker(db: Session, data: WorkerCreate) -> WorkerDTO:
+    obj = Worker(
+        name=data.name,
+        surname=data.surname,
+        workingHoursTo=data.workingHoursTo,
+        workingHoursFrom=data.workingHoursFrom,
     )
     db.add(obj)
     db.flush()
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_radnik).values(radnik_id=obj.id, usluga_id=target_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_worker).values(worker_id=obj.id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return radnik_to_dto(obj)
+    return worker_to_dto(obj)
 
 
-def get_radnik(db: Session, radnik_id: int) -> Optional[RadnikDTO]:
-    obj = db.get(Radnik, radnik_id)
-    return radnik_to_dto(obj) if obj is not None else None
+def get_worker(db: Session, worker_id: int) -> Optional[WorkerDTO]:
+    obj = db.get(Worker, worker_id)
+    return worker_to_dto(obj) if obj is not None else None
 
 
-def list_radnik(db: Session) -> List[RadnikDTO]:
-    objs = db.execute(select(Radnik)).scalars().all()
-    return [radnik_to_dto(o) for o in objs]
+def list_worker(db: Session) -> List[WorkerDTO]:
+    objs = db.execute(select(Worker)).scalars().all()
+    return [worker_to_dto(o) for o in objs]
 
 
-def update_radnik(db: Session, radnik_id: int, data: RadnikCreate) -> Optional[RadnikDTO]:
-    obj = db.get(Radnik, radnik_id)
+def update_worker(db: Session, worker_id: int, data: WorkerCreate) -> Optional[WorkerDTO]:
+    obj = db.get(Worker, worker_id)
     if obj is None:
         return None
-    obj.ime = data.ime
-    obj.prezime = data.prezime
-    obj.radnoVremeDo = data.radnoVremeDo
-    obj.radnoVremeOd = data.radnoVremeOd
-    db.execute(sa_delete(usluga_radnik).where(usluga_radnik.c.radnik_id == radnik_id))
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_radnik).values(radnik_id=radnik_id, usluga_id=target_id))
+    obj.name = data.name
+    obj.surname = data.surname
+    obj.workingHoursTo = data.workingHoursTo
+    obj.workingHoursFrom = data.workingHoursFrom
+    db.execute(sa_delete(service_worker).where(service_worker.c.worker_id == worker_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_worker).values(worker_id=worker_id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return radnik_to_dto(obj)
+    return worker_to_dto(obj)
 
 
-def delete_radnik(db: Session, radnik_id: int) -> bool:
-    obj = db.get(Radnik, radnik_id)
+def delete_worker(db: Session, worker_id: int) -> bool:
+    obj = db.get(Worker, worker_id)
     if obj is None:
         return False
     db.delete(obj)
     db.commit()
     return True
 
-def get_radnik_usluga_ids(db: Session, radnik_id: int) -> List[int]:
+def get_worker_service_ids(db: Session, worker_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_radnik.c.usluga_id).where(usluga_radnik.c.radnik_id == radnik_id)
+        select(service_worker.c.service_id).where(service_worker.c.worker_id == worker_id)
     ).scalars().all()
     return list(rows)
 
 # ---------------------------------------------------------------------------
-# Termin
+# Appointment
 # ---------------------------------------------------------------------------
 
-def create_termin(db: Session, data: TerminCreate) -> TerminDTO:
-    obj = Termin(
-        datumVreme=data.datumVreme,
+def create_appointment(db: Session, data: AppointmentCreate) -> AppointmentDTO:
+    obj = Appointment(
+        dateTime=data.dateTime,
         status=data.status,
-        trajanjeMin=data.trajanjeMin,
-        klijent_id=data.klijent_id,
-        radnik_id=data.radnik_id,
+        durationMinutes=data.durationMinutes,
+        client_id=data.client_id,
+        worker_id=data.worker_id,
     )
     db.add(obj)
     db.flush()
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_termin).values(termin_id=obj.id, usluga_id=target_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_appointment).values(appointment_id=obj.id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return termin_to_dto(obj)
+    return appointment_to_dto(obj)
 
 
-def get_termin(db: Session, termin_id: int) -> Optional[TerminDTO]:
-    obj = db.get(Termin, termin_id)
-    return termin_to_dto(obj) if obj is not None else None
+def get_appointment(db: Session, appointment_id: int) -> Optional[AppointmentDTO]:
+    obj = db.get(Appointment, appointment_id)
+    return appointment_to_dto(obj) if obj is not None else None
 
 
-def list_termin(db: Session) -> List[TerminDTO]:
-    objs = db.execute(select(Termin)).scalars().all()
-    return [termin_to_dto(o) for o in objs]
+def list_appointment(db: Session) -> List[AppointmentDTO]:
+    objs = db.execute(select(Appointment)).scalars().all()
+    return [appointment_to_dto(o) for o in objs]
 
 
-def update_termin(db: Session, termin_id: int, data: TerminCreate) -> Optional[TerminDTO]:
-    obj = db.get(Termin, termin_id)
+def update_appointment(db: Session, appointment_id: int, data: AppointmentCreate) -> Optional[AppointmentDTO]:
+    obj = db.get(Appointment, appointment_id)
     if obj is None:
         return None
-    obj.datumVreme = data.datumVreme
+    obj.dateTime = data.dateTime
     obj.status = data.status
-    obj.trajanjeMin = data.trajanjeMin
-    obj.klijent_id = data.klijent_id
-    obj.radnik_id = data.radnik_id
-    db.execute(sa_delete(usluga_termin).where(usluga_termin.c.termin_id == termin_id))
-    for target_id in data.usluga_ids:
-        db.execute(insert(usluga_termin).values(termin_id=termin_id, usluga_id=target_id))
+    obj.durationMinutes = data.durationMinutes
+    obj.client_id = data.client_id
+    obj.worker_id = data.worker_id
+    db.execute(sa_delete(service_appointment).where(service_appointment.c.appointment_id == appointment_id))
+    for target_id in data.service_ids:
+        db.execute(insert(service_appointment).values(appointment_id=appointment_id, service_id=target_id))
     db.commit()
     db.refresh(obj)
-    return termin_to_dto(obj)
+    return appointment_to_dto(obj)
 
 
-def delete_termin(db: Session, termin_id: int) -> bool:
-    obj = db.get(Termin, termin_id)
+def delete_appointment(db: Session, appointment_id: int) -> bool:
+    obj = db.get(Appointment, appointment_id)
     if obj is None:
         return False
     db.delete(obj)
     db.commit()
     return True
 
-def get_termin_usluga_ids(db: Session, termin_id: int) -> List[int]:
+def get_appointment_service_ids(db: Session, appointment_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_termin.c.usluga_id).where(usluga_termin.c.termin_id == termin_id)
+        select(service_appointment.c.service_id).where(service_appointment.c.appointment_id == appointment_id)
     ).scalars().all()
     return list(rows)
 
 # ---------------------------------------------------------------------------
-# Usluga
+# Service
 # ---------------------------------------------------------------------------
 
-def create_usluga(db: Session, data: UslugaCreate) -> UslugaDTO:
-    obj = Usluga(
-        cena=data.cena,
-        kategorija=data.kategorija,
-        naziv=data.naziv,
-        trajanjeMin=data.trajanjeMin,
+def create_service(db: Session, data: ServiceCreate) -> ServiceDTO:
+    obj = Service(
+        price=data.price,
+        category=data.category,
+        name=data.name,
+        durationMinutes=data.durationMinutes,
     )
     db.add(obj)
     db.flush()
-    for target_id in data.paket_ids:
-        db.execute(insert(usluga_paket).values(usluga_id=obj.id, paket_id=target_id))
-    for target_id in data.radnik_ids:
-        db.execute(insert(usluga_radnik).values(usluga_id=obj.id, radnik_id=target_id))
-    for target_id in data.termin_ids:
-        db.execute(insert(usluga_termin).values(usluga_id=obj.id, termin_id=target_id))
+    for target_id in data.package_ids:
+        db.execute(insert(service_package).values(service_id=obj.id, package_id=target_id))
+    for target_id in data.worker_ids:
+        db.execute(insert(service_worker).values(service_id=obj.id, worker_id=target_id))
+    for target_id in data.appointment_ids:
+        db.execute(insert(service_appointment).values(service_id=obj.id, appointment_id=target_id))
     db.commit()
     db.refresh(obj)
-    return usluga_to_dto(obj)
+    return service_to_dto(obj)
 
 
-def get_usluga(db: Session, usluga_id: int) -> Optional[UslugaDTO]:
-    obj = db.get(Usluga, usluga_id)
-    return usluga_to_dto(obj) if obj is not None else None
+def get_service(db: Session, service_id: int) -> Optional[ServiceDTO]:
+    obj = db.get(Service, service_id)
+    return service_to_dto(obj) if obj is not None else None
 
 
-def list_usluga(db: Session) -> List[UslugaDTO]:
-    objs = db.execute(select(Usluga)).scalars().all()
-    return [usluga_to_dto(o) for o in objs]
+def list_service(db: Session) -> List[ServiceDTO]:
+    objs = db.execute(select(Service)).scalars().all()
+    return [service_to_dto(o) for o in objs]
 
 
-def update_usluga(db: Session, usluga_id: int, data: UslugaCreate) -> Optional[UslugaDTO]:
-    obj = db.get(Usluga, usluga_id)
+def update_service(db: Session, service_id: int, data: ServiceCreate) -> Optional[ServiceDTO]:
+    obj = db.get(Service, service_id)
     if obj is None:
         return None
-    obj.cena = data.cena
-    obj.kategorija = data.kategorija
-    obj.naziv = data.naziv
-    obj.trajanjeMin = data.trajanjeMin
-    db.execute(sa_delete(usluga_paket).where(usluga_paket.c.usluga_id == usluga_id))
-    for target_id in data.paket_ids:
-        db.execute(insert(usluga_paket).values(usluga_id=usluga_id, paket_id=target_id))
-    db.execute(sa_delete(usluga_radnik).where(usluga_radnik.c.usluga_id == usluga_id))
-    for target_id in data.radnik_ids:
-        db.execute(insert(usluga_radnik).values(usluga_id=usluga_id, radnik_id=target_id))
-    db.execute(sa_delete(usluga_termin).where(usluga_termin.c.usluga_id == usluga_id))
-    for target_id in data.termin_ids:
-        db.execute(insert(usluga_termin).values(usluga_id=usluga_id, termin_id=target_id))
+    obj.price = data.price
+    obj.category = data.category
+    obj.name = data.name
+    obj.durationMinutes = data.durationMinutes
+    db.execute(sa_delete(service_package).where(service_package.c.service_id == service_id))
+    for target_id in data.package_ids:
+        db.execute(insert(service_package).values(service_id=service_id, package_id=target_id))
+    db.execute(sa_delete(service_worker).where(service_worker.c.service_id == service_id))
+    for target_id in data.worker_ids:
+        db.execute(insert(service_worker).values(service_id=service_id, worker_id=target_id))
+    db.execute(sa_delete(service_appointment).where(service_appointment.c.service_id == service_id))
+    for target_id in data.appointment_ids:
+        db.execute(insert(service_appointment).values(service_id=service_id, appointment_id=target_id))
     db.commit()
     db.refresh(obj)
-    return usluga_to_dto(obj)
+    return service_to_dto(obj)
 
 
-def delete_usluga(db: Session, usluga_id: int) -> bool:
-    obj = db.get(Usluga, usluga_id)
+def delete_service(db: Session, service_id: int) -> bool:
+    obj = db.get(Service, service_id)
     if obj is None:
         return False
     db.delete(obj)
     db.commit()
     return True
 
-def get_usluga_paket_ids(db: Session, usluga_id: int) -> List[int]:
+def get_service_package_ids(db: Session, service_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_paket.c.paket_id).where(usluga_paket.c.usluga_id == usluga_id)
+        select(service_package.c.package_id).where(service_package.c.service_id == service_id)
     ).scalars().all()
     return list(rows)
 
-def get_usluga_radnik_ids(db: Session, usluga_id: int) -> List[int]:
+def get_service_worker_ids(db: Session, service_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_radnik.c.radnik_id).where(usluga_radnik.c.usluga_id == usluga_id)
+        select(service_worker.c.worker_id).where(service_worker.c.service_id == service_id)
     ).scalars().all()
     return list(rows)
 
-def get_usluga_termin_ids(db: Session, usluga_id: int) -> List[int]:
+def get_service_appointment_ids(db: Session, service_id: int) -> List[int]:
     rows = db.execute(
-        select(usluga_termin.c.termin_id).where(usluga_termin.c.usluga_id == usluga_id)
+        select(service_appointment.c.appointment_id).where(service_appointment.c.service_id == service_id)
     ).scalars().all()
     return list(rows)

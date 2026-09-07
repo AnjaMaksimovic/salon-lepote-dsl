@@ -1,16 +1,16 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Generated from model/salon_model.py; update the model or template before regenerating."""
 import enum
 
 
-class KategorijaUsluge(enum.Enum):
-    FRIZURA = "FRIZURA"
-    DEPILACIJA = "DEPILACIJA"
-    MANIKIR_PEDIKIR = "MANIKIR_PEDIKIR"
+class ServiceCategory(enum.Enum):
+    HAIR_REMOVAL = "HAIR_REMOVAL"
+    HAIRCUT = "HAIRCUT"
     LASH_BROW = "LASH_BROW"
-    NEGA_LICA = "NEGA_LICA"
+    MANICURE_PEDICURE = "MANICURE_PEDICURE"
+    FACIAL_CARE = "FACIAL_CARE"
 
-class StatusTermina(enum.Enum):
-    ODRZAN = "ODRZAN"
-    OTKAZAN = "OTKAZAN"
-    ZAKAZAN = "ZAKAZAN"
+class AppointmentStatus(enum.Enum):
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+    SCHEDULED = "SCHEDULED"
 

@@ -1,0 +1,31 @@
+"""Database engine and request sessions."""
+import os
+from pathlib import Path
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from generated.entities import Base
+from generated import association_tables
+
+DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "salon.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///" + DEFAULT_DATABASE.as_posix())
+options = {}
+if DATABASE_URL.startswith("sqlite:"):
+    options["connect_args"] = {"check_same_thread": False}
+    if DATABASE_URL in ("sqlite://", "sqlite:///:memory:"):
+        options["poolclass"] = StaticPool
+engine = create_engine(DATABASE_URL, **options)
+if engine.dialect.name == "sqlite":
+    @event.listens_for(engine, "connect")
+    def enable_foreign_keys(connection, _):
+        connection.execute("PRAGMA foreign_keys=ON")
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    with SessionLocal() as db:
+        yield db

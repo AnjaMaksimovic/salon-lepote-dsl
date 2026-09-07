@@ -1,93 +1,174 @@
-"""AUTO-GENERISANO - NE MENJATI RUČNO. Izmene radite u model/salon_model.py i ponovo pokrenite generate.py"""
+"""Request and response schemas for the generated API."""
 from datetime import date, datetime, time
-from typing import List, Optional
-from pydantic import BaseModel
-from generated.enums import KategorijaUsluge, StatusTermina
+from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field
+from generated.enums import ServiceCategory, AppointmentStatus
 
-
-class KlijentBase(BaseModel):
+class ClientRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
     email: str
-    ime: str
-    telefon: str
+    name: str
+    phone: str
+
+class PackageRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    price: float
+    name: str
+
+class WorkerRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    surname: str
+    workingHoursTo: time
+    workingHoursFrom: time
+
+class AppointmentRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    dateTime: datetime
+    status: AppointmentStatus
+    durationMinutes: int
+
+class ServiceRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    price: float
+    category: ServiceCategory
+    name: str
+    durationMinutes: int
+
+class ClientBase(BaseModel):
+    email: str
+    name: str
+    phone: str
 
 
-class KlijentCreate(KlijentBase):
+class ClientCreate(ClientBase):
     pass
 
 
-class KlijentOut(KlijentBase):
+class ClientRead(ClientBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
-    class Config:
-        from_attributes = True
 
-class PaketBase(BaseModel):
-    cena: float
-    naziv: str
-
-
-class PaketCreate(PaketBase):
-    usluga_ids: List[int] = []
+class ClientUpdate(BaseModel):
+    email: Optional[str] = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
 
 
-class PaketOut(PaketBase):
+ClientOut = ClientRead
+class PackageBase(BaseModel):
+    price: float
+    name: str
+
+
+class PackageCreate(PackageBase):
+    service_ids: list[int] = Field(default_factory=list)
+
+
+class PackageRead(PackageBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
-
-    class Config:
-        from_attributes = True
-
-class RadnikBase(BaseModel):
-    ime: str
-    prezime: str
-    radnoVremeDo: time
-    radnoVremeOd: time
+    service: list[ServiceRef] = Field(default_factory=list)
 
 
-class RadnikCreate(RadnikBase):
-    usluga_ids: List[int] = []
+class PackageUpdate(BaseModel):
+    price: Optional[float] = None
+    name: Optional[str] = None
+    service_ids: Optional[list[int]] = None
 
 
-class RadnikOut(RadnikBase):
+PackageOut = PackageRead
+class WorkerBase(BaseModel):
+    name: str
+    surname: str
+    workingHoursTo: time
+    workingHoursFrom: time
+
+
+class WorkerCreate(WorkerBase):
+    service_ids: list[int] = Field(default_factory=list)
+
+
+class WorkerRead(WorkerBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
-
-    class Config:
-        from_attributes = True
-
-class TerminBase(BaseModel):
-    datumVreme: datetime
-    status: StatusTermina
-    trajanjeMin: int
+    service: list[ServiceRef] = Field(default_factory=list)
 
 
-class TerminCreate(TerminBase):
-    klijent_id: int
-    radnik_id: int
-    usluga_ids: List[int] = []
+class WorkerUpdate(BaseModel):
+    name: Optional[str] = None
+    surname: Optional[str] = None
+    workingHoursTo: Optional[time] = None
+    workingHoursFrom: Optional[time] = None
+    service_ids: Optional[list[int]] = None
 
 
-class TerminOut(TerminBase):
+WorkerOut = WorkerRead
+class AppointmentBase(BaseModel):
+    dateTime: datetime
+    status: AppointmentStatus
+    durationMinutes: int
+
+
+class AppointmentCreate(AppointmentBase):
+    client_id: int
+    worker_id: int
+    service_ids: list[int] = Field(default_factory=list)
+
+
+class AppointmentRead(AppointmentBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
-    klijent_id: int
-    radnik_id: int
-
-    class Config:
-        from_attributes = True
-
-class UslugaBase(BaseModel):
-    cena: float
-    kategorija: KategorijaUsluge
-    naziv: str
-    trajanjeMin: int
+    client_id: int
+    worker_id: int
+    service: list[ServiceRef] = Field(default_factory=list)
 
 
-class UslugaCreate(UslugaBase):
-    paket_ids: List[int] = []
-    radnik_ids: List[int] = []
-    termin_ids: List[int] = []
+class AppointmentUpdate(BaseModel):
+    dateTime: Optional[datetime] = None
+    status: Optional[AppointmentStatus] = None
+    durationMinutes: Optional[int] = None
+    client_id: Optional[int] = None
+    worker_id: Optional[int] = None
+    service_ids: Optional[list[int]] = None
 
 
-class UslugaOut(UslugaBase):
+AppointmentOut = AppointmentRead
+class ServiceBase(BaseModel):
+    price: float
+    category: ServiceCategory
+    name: str
+    durationMinutes: int
+
+
+class ServiceCreate(ServiceBase):
+    package_ids: list[int] = Field(default_factory=list)
+    worker_ids: list[int] = Field(default_factory=list)
+    appointment_ids: list[int] = Field(default_factory=list)
+
+
+class ServiceRead(ServiceBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
+    package: list[PackageRef] = Field(default_factory=list)
+    worker: list[WorkerRef] = Field(default_factory=list)
+    appointment: list[AppointmentRef] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+
+class ServiceUpdate(BaseModel):
+    price: Optional[float] = None
+    category: Optional[ServiceCategory] = None
+    name: Optional[str] = None
+    durationMinutes: Optional[int] = None
+    package_ids: Optional[list[int]] = None
+    worker_ids: Optional[list[int]] = None
+    appointment_ids: Optional[list[int]] = None
+
+
+ServiceOut = ServiceRead

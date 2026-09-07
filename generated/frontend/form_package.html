@@ -1,0 +1,122 @@
+<!-- Generated from the domain model. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Package - New record</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">New Package</h1>
+<div class="nav"><a href="list_package.html">&larr; Back to list</a></div>
+<form id="f">
+  <label>Price
+    <input name="price" type="number" step="any">
+  </label>
+  <label>Name
+    <input name="name" type="text">
+  </label>
+  <fieldset class="checkbox-group" data-m2m-source="service" data-m2m-display="name" data-m2m-role="service">
+    <legend>Service (select one or more)</legend>
+    <div class="checkbox-group-items">- loading -</div>
+  </fieldset>
+  <button type="submit">Save</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+  return data;
+}
+// Keep scrolling from changing numeric values accidentally.
+document.querySelectorAll('input[type="number"]').forEach(input => {
+  input.addEventListener('wheel', event => {
+    if (document.activeElement === input) event.preventDefault();
+  }, { passive: false });
+});
+
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Package - Edit";
+  document.getElementById("naslov").textContent = "Edit Package";
+  document.querySelector('button[type="submit"]').textContent = "Save changes";
+}
+
+function populateOptions(url, render) {
+  return requestJson(url).then(render);
+}
+
+const optionsLoaded = [
+  populateOptions("/service/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="service"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="service_ids" value="${o.id}"> ${escapeHtml(o.name ?? ("#" + o.id))}</label>`).join("")
+      : '<span class="muted">No service records available.</span>';
+  }),
+];
+
+if (editId) {
+  Promise.all(optionsLoaded).then(() => {
+    return requestJson(`/package/${editId}`)
+      .then(rec => {
+        document.querySelector('[name="price"]').value = rec.price ?? "";
+        document.querySelector('[name="name"]').value = rec.name ?? "";
+        const selected_service = new Set((rec.service || []).map(o => o.id));
+        document.querySelectorAll('input[name="service_ids"]').forEach(cb => {
+          cb.checked = selected_service.has(parseInt(cb.value, 10));
+        });
+      });
+  }).catch(err => { document.getElementById("out").textContent = err.message; });
+}
+Promise.all(optionsLoaded).catch(err => { document.getElementById("out").textContent = err.message; });
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["price"] = parseFloat(document.querySelector('[name="price"]').value);
+  payload["name"] = document.querySelector('[name="name"]').value;
+  payload["service_ids"] = Array.from(document.querySelectorAll('input[name="service_ids"]:checked')).map(el => parseInt(el.value, 10));
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Saving...";
+
+  const url = editId
+    ? `/package/${editId}`
+    : "/package/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Saved. Returning to the list...";
+    setTimeout(() => { window.location.href = "list_package.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Error: " + (err && err.detail ? JSON.stringify(err.detail) : (err.message || JSON.stringify(err)));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>

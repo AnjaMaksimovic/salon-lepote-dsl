@@ -3,28 +3,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ cls.name }} - List</title>
+<title>Package - List</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
-<h1>{{ cls.name }}</h1>
+<h1>Package</h1>
 <div class="nav">
-  <a href="index.html">&larr; Home</a><span class="sep">|</span><a href="form_{{ cls.lower }}.html">+ New {{ cls.name }}</a>
+  <a href="index.html">&larr; Home</a><span class="sep">|</span><a href="form_package.html">+ New Package</a>
 </div>
 <p id="error" role="alert"></p>
 <table id="tbl">
 <thead><tr>
   <th>id</th>
-{% for attr in cls.form_attributes %}
-  <th>{{ attr.label }}</th>
-{% endfor %}
-{% for fk in cls.fk_fields %}
-  <th>{{ fk.label }}</th>
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-  <th>{{ role|capitalize }}</th>
-{% endfor %}
+  <th>Price</th>
+  <th>Name</th>
+  <th>Service</th>
   <th></th>
 </tr></thead>
 <tbody></tbody>
@@ -44,50 +38,35 @@ async function requestJson(url, options) {
 }
 function loadReferenceOptions() {
   return Promise.all([
-{% for fk in cls.fk_fields %}
-    requestJson("/{{ fk.ref_table }}/").then(rows => {
-      referenceOptions["{{ fk.column_name }}"] = Object.fromEntries(rows.map(o => [o.id, o.{{ fk.display_attr }} ?? ("#" + o.id)]));
-    }){{ "," if not loop.last }}
-{% endfor %}
   ]);
 }
 const referenceOptions = {};
 
 function loadRecords() {
   loadReferenceOptions().then(() => {
-    return requestJson("/{{ cls.lower }}/")
+    return requestJson("/package/")
       .then(rows => {
         const tbody = document.querySelector("#tbl tbody");
         tbody.innerHTML = "";
         if (rows.length === 0) {
           const colCount = document.querySelectorAll("#tbl thead th").length;
           tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center; color:var(--muted); padding:1.5rem;">
-            No records yet. <a href="form_{{ cls.lower }}.html">Add the first record.</a></td></tr>`;
+            No records yet. <a href="form_package.html">Add the first record.</a></td></tr>`;
           return;
         }
         rows.forEach(row => {
           const tr = document.createElement("tr");
           let html = `<td>${row.id}</td>`;
-{% for attr in cls.form_attributes %}
-{% if attr.py_type == "bool" %}
-          html += `<td>${row.{{ attr.name }} ? "Yes" : "No"}</td>`;
-{% else %}
-          html += `<td>${escapeHtml(row.{{ attr.name }})}</td>`;
-{% endif %}
-{% endfor %}
-{% for fk in cls.fk_fields %}
-          html += `<td>${escapeHtml(referenceOptions["{{ fk.column_name }}"][row.{{ fk.column_name }}] ?? row.{{ fk.column_name }})}</td>`;
-{% endfor %}
-{% for role in cls.m2m_create_fields %}
-          html += `<td>${escapeHtml((row.{{ role }} || []).map(o => o.{{ m2m_role_display_attr[role] }}).join(", "))}</td>`;
-{% endfor %}
-          html += `<td><a class="edit" href="form_{{ cls.lower }}.html?id=${row.id}">edit</a><button class="del" data-id="${row.id}">delete</button></td>`;
+          html += `<td>${escapeHtml(row.price)}</td>`;
+          html += `<td>${escapeHtml(row.name)}</td>`;
+          html += `<td>${escapeHtml((row.service || []).map(o => o.name).join(", "))}</td>`;
+          html += `<td><a class="edit" href="form_package.html?id=${row.id}">edit</a><button class="del" data-id="${row.id}">delete</button></td>`;
           tr.innerHTML = html;
           tbody.appendChild(tr);
         });
         tbody.querySelectorAll("button.del").forEach(btn => {
           btn.addEventListener("click", () => {
-            requestJson(`/{{ cls.lower }}/${btn.dataset.id}`, { method: "DELETE" })
+            requestJson(`/package/${btn.dataset.id}`, { method: "DELETE" })
               .then(() => loadRecords())
               .catch(err => { document.getElementById("error").textContent = err.message; });
           });

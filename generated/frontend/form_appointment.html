@@ -1,0 +1,157 @@
+<!-- Generated from the domain model. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Appointment - New record</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1 id="naslov">New Appointment</h1>
+<div class="nav"><a href="list_appointment.html">&larr; Back to list</a></div>
+<form id="f">
+  <label>Date time
+    <input name="dateTime" type="datetime-local">
+  </label>
+  <label>Status
+    <select name="status">
+      <option value="COMPLETED">COMPLETED</option>
+      <option value="CANCELLED">CANCELLED</option>
+      <option value="SCHEDULED">SCHEDULED</option>
+    </select>
+  </label>
+  <label>Duration minutes
+    <input name="durationMinutes" type="number">
+  </label>
+  <label>Client
+    <select name="client_id" data-fk-source="client" data-fk-display="name">
+      <option value="">- loading -</option>
+    </select>
+  </label>
+  <label>Worker
+    <select name="worker_id" data-fk-source="worker" data-fk-display="name">
+      <option value="">- loading -</option>
+    </select>
+  </label>
+  <fieldset class="checkbox-group" data-m2m-source="service" data-m2m-display="name" data-m2m-role="service">
+    <legend>Service (select one or more)</legend>
+    <div class="checkbox-group-items">- loading -</div>
+  </fieldset>
+  <button type="submit">Save</button>
+</form>
+<pre id="out"></pre>
+</div>
+<script>
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+  return data;
+}
+// Keep scrolling from changing numeric values accidentally.
+document.querySelectorAll('input[type="number"]').forEach(input => {
+  input.addEventListener('wheel', event => {
+    if (document.activeElement === input) event.preventDefault();
+  }, { passive: false });
+});
+
+const params = new URLSearchParams(location.search);
+const editId = params.get("id");
+if (editId) {
+  document.title = "Appointment - Edit";
+  document.getElementById("naslov").textContent = "Edit Appointment";
+  document.querySelector('button[type="submit"]').textContent = "Save changes";
+}
+
+function populateOptions(url, render) {
+  return requestJson(url).then(render);
+}
+
+const optionsLoaded = [
+  populateOptions("/client/", rows => {
+    const sel = document.querySelector('select[name="client_id"]');
+    sel.innerHTML = rows.length
+      ? rows.map(o => `<option value="${o.id}">${escapeHtml(o.name ?? ("#" + o.id))}</option>`).join("")
+      : '<option value="">- no records; add a client first -</option>';
+  }),
+  populateOptions("/worker/", rows => {
+    const sel = document.querySelector('select[name="worker_id"]');
+    sel.innerHTML = rows.length
+      ? rows.map(o => `<option value="${o.id}">${escapeHtml(o.name ?? ("#" + o.id))}</option>`).join("")
+      : '<option value="">- no records; add a worker first -</option>';
+  }),
+  populateOptions("/service/", rows => {
+    const wrap = document.querySelector('fieldset[data-m2m-role="service"] .checkbox-group-items');
+    wrap.innerHTML = rows.length
+      ? rows.map(o => `<label><input type="checkbox" name="service_ids" value="${o.id}"> ${escapeHtml(o.name ?? ("#" + o.id))}</label>`).join("")
+      : '<span class="muted">No service records available.</span>';
+  }),
+];
+
+if (editId) {
+  Promise.all(optionsLoaded).then(() => {
+    return requestJson(`/appointment/${editId}`)
+      .then(rec => {
+        document.querySelector('[name="dateTime"]').value = rec.dateTime ?? "";
+        document.querySelector('[name="status"]').value = rec.status ?? "";
+        document.querySelector('[name="durationMinutes"]').value = rec.durationMinutes ?? "";
+        document.querySelector('select[name="client_id"]').value = rec.client_id;
+        document.querySelector('select[name="worker_id"]').value = rec.worker_id;
+        const selected_service = new Set((rec.service || []).map(o => o.id));
+        document.querySelectorAll('input[name="service_ids"]').forEach(cb => {
+          cb.checked = selected_service.has(parseInt(cb.value, 10));
+        });
+      });
+  }).catch(err => { document.getElementById("out").textContent = err.message; });
+}
+Promise.all(optionsLoaded).catch(err => { document.getElementById("out").textContent = err.message; });
+
+document.getElementById("f").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const payload = {};
+  payload["dateTime"] = document.querySelector('[name="dateTime"]').value;
+  payload["status"] = document.querySelector('[name="status"]').value;
+  payload["durationMinutes"] = parseInt(document.querySelector('[name="durationMinutes"]').value, 10);
+  payload["client_id"] = parseInt(document.querySelector('[name="client_id"]').value, 10);
+  payload["worker_id"] = parseInt(document.querySelector('[name="worker_id"]').value, 10);
+  payload["service_ids"] = Array.from(document.querySelectorAll('input[name="service_ids"]:checked')).map(el => parseInt(el.value, 10));
+
+  const out = document.getElementById("out");
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Saving...";
+
+  const url = editId
+    ? `/appointment/${editId}`
+    : "/appointment/";
+
+  fetch(url, {
+    method: editId ? "PUT" : "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  })
+  .then(() => {
+    out.textContent = "Saved. Returning to the list...";
+    setTimeout(() => { window.location.href = "list_appointment.html"; }, 500);
+  })
+  .catch(err => {
+    out.classList.add("error");
+    out.textContent = "Error: " + (err && err.detail ? JSON.stringify(err.detail) : (err.message || JSON.stringify(err)));
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
