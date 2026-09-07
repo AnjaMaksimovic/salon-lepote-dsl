@@ -433,6 +433,7 @@ render("postman_collection.j2", os.path.join(OUTPUT_DIR, "postman_collection.jso
        collection_json=postman_collection_json)
 
 render("seed_data.py.j2", os.path.join(OUTPUT_DIR, "seed_data.py"), classes=seed_order)
+render("tests.py.j2", os.path.join(OUTPUT_DIR, "test_api.py"), classes=seed_order)
 
 # generated/__init__.py da bi paket radio (potrebno za sve buduce import-e)
 open(os.path.join(OUTPUT_DIR, "__init__.py"), "w").close()
